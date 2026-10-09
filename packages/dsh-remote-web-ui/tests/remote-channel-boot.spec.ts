@@ -176,11 +176,11 @@ describe('remote channel boot patch (issue #987)', () => {
       { label: 'the desktop shell delivery scheme', hostname: 'app', protocol: 'dsh-app:' },
       { label: 'an unknown application scheme', hostname: 'app', protocol: 'future-shell:' },
       { label: 'a file page', hostname: '', protocol: 'file:' },
-      { label: 'a page with no readable scheme', hostname: 'box.trycloudflare.com', protocol: '' },
+      { label: 'a page with no readable scheme', hostname: 'box.example.com', protocol: '' },
       { label: 'a scheme-local authority carrying the host hook', hostname: 'app', protocol: 'http:', ownsHost: true },
       { label: 'a LAN origin', hostname: '192.168.1.20', protocol: 'http:' },
-      { label: 'a tunnel origin', hostname: 'box.trycloudflare.com', protocol: 'https:' },
-      { label: 'a blob document a network page minted', hostname: 'box.trycloudflare.com', protocol: 'blob:' },
+      { label: 'a tunnel origin', hostname: 'box.example.com', protocol: 'https:' },
+      { label: 'a blob document a network page minted', hostname: 'box.example.com', protocol: 'blob:' },
       { label: 'a granted LAN page', hostname: '192.168.1.20', protocol: 'http:', ownsHost: true },
     ]
     for (const row of MATRIX) {
@@ -364,7 +364,7 @@ interface WatchWindow {
   reloads: number
 }
 
-function makeWatchWindow(appMounted: () => boolean, hostname = 'claire-grain-desire-relief.trycloudflare.com'): WatchWindow {
+function makeWatchWindow(appMounted: () => boolean, hostname = 'claire.example.com'): WatchWindow {
   const win: WatchWindow = {
     fetch: () => Promise.resolve({}),
     WebSocket: class {},

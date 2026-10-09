@@ -12,7 +12,7 @@ import { createPortal } from 'react-dom'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PairingPhase } from '../pairing.ts'
 import { RemotePanel, type PanelState } from './RemotePanel.tsx'
-import { copyText, issuePair, revokePair, stopPair, type DeviceFrame, type IssueResponse, type PairStateFrame, type RelayStatusFrame, type TunnelStatusFrame } from './pair-api.ts'
+import { copyText, issuePair, revokePair, stopPair, type DeviceFrame, type IssueResponse, type PairStateFrame } from './pair-api.ts'
 import { PhoneIcon } from './PhoneIcon.tsx'
 import css from './remote.module.css'
 
@@ -24,16 +24,9 @@ export type RemoteEntryProps = PropsLocale<'remote'> & {
 
 /**
  * Apply one status frame onto the current state: the ready state mirrors
- * the full phase/device picture, while the lan-required banner only keeps
- * the auto-tunnel frame (the signal for the running re-issue).
+ * the full phase/device picture; the banner states stay until re-minted.
  */
 function mergeFrame(state: PanelState, frame: PairStateFrame): PanelState {
-  if (state.kind === 'lan-required') {
-    return {
-      ...state,
-      ...(frame.tunnel !== undefined ? { tunnel: frame.tunnel } : {}),
-    }
-  }
   if (state.kind !== 'ready') return state
   return {
     ...state,
@@ -41,8 +34,6 @@ function mergeFrame(state: PanelState, frame: PairStateFrame): PanelState {
     deviceCount: frame.deviceCount,
     onlineCount: frame.onlineCount,
     devices: frame.devices ?? [],
-    ...(frame.tunnel !== undefined ? { tunnel: frame.tunnel as TunnelStatusFrame } : {}),
-    ...(frame.relay !== undefined ? { relay: frame.relay } : {}),
     ...(frame.posture !== undefined ? { posture: frame.posture } : {}),
   }
 }
@@ -55,11 +46,6 @@ function mergeFrame(state: PanelState, frame: PairStateFrame): PanelState {
 export function RemoteEntry({ wide, t }: RemoteEntryProps) {
   const [open, setOpen] = useState(false)
   const [state, setState] = useState<PanelState>({ kind: 'lan-required' })
-  // Latest-state mirror for the EventSource callback: transition detection
-  // must live outside setState updaters (updaters may run twice and must be
-  // pure), so mint decisions read this ref instead.
-  const stateRef = useRef(state)
-  useEffect(() => { stateRef.current = state }, [state])
   const [copied, setCopied] = useState<boolean>(false)
   const [copiedToken, setCopiedToken] = useState<boolean>(false)
   const eventSource = useRef<EventSource | undefined>(undefined)
@@ -101,7 +87,7 @@ export function RemoteEntry({ wide, t }: RemoteEntryProps) {
       deviceCount: 0,
       onlineCount: 0,
       devices: [] as DeviceFrame[],
-      // Whether this QR is built on the configured public (tunneled) base.
+      // Whether this QR is built on the configured public (proxy) base.
       public: publicBaseUrl !== undefined && result.url.startsWith(publicBaseUrl),
       ...(publicBaseUrl !== undefined ? { publicBaseUrl } : {}),
       // The issued URL names the requested (or default first) literal; the
@@ -121,33 +107,15 @@ export function RemoteEntry({ wide, t }: RemoteEntryProps) {
     if (seq !== openSeq.current) return
     setState(next)
     // Live status: the desktop panel mirrors the pairing service state. The
-    // stream makes sense in the ready state and on the lan-required banner —
-    // there the auto-tunnel may still be starting, and following its frames
-    // lets the panel re-issue once it runs. The loopback-required and
-    // unreachable origins are fenced out of the events endpoint, so opening
-    // it there would just start a doomed reconnect loop.
-    if (next.kind !== 'ready' && next.kind !== 'lan-required') return
+    // loopback-required and unreachable origins are fenced out of the events
+    // endpoint, so opening it there would just start a doomed reconnect loop.
+    if (next.kind !== 'ready') return
     const source = new EventSource('api/pair/events')
     eventSource.current = source
     source.onmessage = (event) => {
       try {
         const frame = JSON.parse(event.data as string) as PairStateFrame
         if (frame.type !== 'state') return
-        // The auto-tunnel crossed into running while the panel sat on the
-        // lan-required banner: re-issue so the server hands back a ready QR
-        // built on the public base (only on the transition into running, to
-        // avoid mint storms). Detected on the ref, outside the updater: an
-        // updater may be invoked twice and must stay pure, so mint() cannot
-        // run inside it.
-        const previous = stateRef.current
-        if (
-          previous.kind === 'lan-required'
-          && frame.tunnel?.state === 'running'
-          && previous.tunnel?.state !== 'running'
-        ) {
-          void mint().then(setState)
-          return
-        }
         setState(current => mergeFrame(current, frame))
       } catch {
         // Malformed frames are dropped; the snapshot on open is authoritative.
@@ -208,7 +176,7 @@ export function RemoteEntry({ wide, t }: RemoteEntryProps) {
     void mint(address).then(setState)
   }, [mint])
 
-  /** Re-mint against the configured public (tunneled) base. */
+  /** Re-mint against the configured public (proxy) base. */
   const handlePickPublic = useCallback(() => {
     void mint().then(setState)
   }, [mint])

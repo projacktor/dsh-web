@@ -270,8 +270,8 @@ export function addBounded(set: Set<string>, value: string, max: number): void {
 }
 
 /**
- * The host authority of a configured public base URL, e.g. `foo.trycloudflare.com`
- * from `https://foo.trycloudflare.com`. Undefined when the URL does not parse —
+ * The host authority of a configured public base URL, e.g. `dsh.example.com`
+ * from `https://dsh.example.com`. Undefined when the URL does not parse —
  * a malformed config then simply contributes no fence entry (and the panel
  * falls back to LAN-only URLs).
  * @param url - the configured public base URL (or undefined).

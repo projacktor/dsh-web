@@ -21,7 +21,7 @@ import { CardForm, textField } from '../src/client/settings-form.ts'
  * @returns the form double plus its in-flight observations.
  */
 function concurrencyProbe() {
-  let snapshot = { status: 'ready', value: { relay: true }, revision: 1, writable: true, mode: 'host' } as unknown as ConfigFormSnapshot<Record<string, unknown>>
+  let snapshot = { status: 'ready', value: { cookieName: 'dsh_pair' }, revision: 1, writable: true, mode: 'host' } as unknown as ConfigFormSnapshot<Record<string, unknown>>
   let inFlight = 0
   let peak = 0
   let calls = 0
@@ -49,12 +49,12 @@ describe('settings card save serialization (issue #1754)', () => {
   it('operator saving during a save never overlaps two Host writes', async () => {
     // Given a Host that holds its first write open until the test releases it
     const probe = concurrencyProbe()
-    const card = new CardForm(probe.form, [textField('relay')])
+    const card = new CardForm(probe.form, [textField('cookieName')])
 
     // When the operator edits and saves, then presses save again mid-flight
-    card.actions().edit('relay', 'false')
+    card.actions().edit('cookieName', 'dsh_pair_2')
     const first = card.requestSave()
-    card.actions().edit('relay', 'true')
+    card.actions().edit('cookieName', 'dsh_pair_3')
     const second = card.requestSave()
     probe.releases[0]?.()
     await Promise.all([first, second])
@@ -66,7 +66,7 @@ describe('settings card save serialization (issue #1754)', () => {
   it('operator pressing save with nothing staged spends no round trip', async () => {
     // Given a Host that answers immediately
     const probe = concurrencyProbe()
-    const card = new CardForm(probe.form, [textField('relay')])
+    const card = new CardForm(probe.form, [textField('cookieName')])
 
     // When the operator presses save on a clean form
     const idle = card.actions().save()
@@ -79,10 +79,10 @@ describe('settings card save serialization (issue #1754)', () => {
   it('operator pressing save twice on one edit writes it exactly once', async () => {
     // Given a Host that holds the first write open
     const probe = concurrencyProbe()
-    const card = new CardForm(probe.form, [textField('relay')])
+    const card = new CardForm(probe.form, [textField('cookieName')])
 
     // When the operator edits once and presses save twice
-    card.actions().edit('relay', 'false')
+    card.actions().edit('cookieName', 'dsh_pair_2')
     const first = card.actions().save()
     const second = card.actions().save()
     probe.releases[0]?.()

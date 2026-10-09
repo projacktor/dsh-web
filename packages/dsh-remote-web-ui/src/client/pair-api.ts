@@ -16,7 +16,7 @@ export interface IssueResult {
   expiresAt: number
   /** Every constructible LAN base address (interface order). */
   lanAddresses: string[]
-  /** The configured public (tunneled) base URL, when present. */
+  /** The configured public base URL, when present. */
   publicBaseUrl?: string
 }
 
@@ -59,22 +59,6 @@ export async function readPairGatePolicy(): Promise<PairGatePolicy> {
 /** accept() refusal codes. */
 export type AcceptFailure = { ok: false; code: 'invalid' | 'forbidden' }
 
-/** One auto-tunnel status frame (absent while the feature is off). */
-export interface TunnelStatusFrame {
-  state: 'starting' | 'running' | 'failed'
-  url?: string
-  error?: string
-}
-
-/** One relay-registry status frame (absent while the relay is not in play). */
-export interface RelayStatusFrame {
-  state: 'off' | 'registering' | 'running' | 'failed'
-  /** The stable relay origin, once registered. */
-  url?: string
-  /** Human-readable failure detail of the last sync attempt. */
-  error?: string
-}
-
 /** One /api posture frame (host half probe; see src/posture.ts). */
 export interface PostureFrame {
   checkedAt: number
@@ -92,10 +76,6 @@ export interface PairStateFrame {
   onlineCount: number
   /** Per-device roster (loopback events only). */
   devices?: DeviceFrame[]
-  /** Auto-tunnel status, while the auto-tunnel feature is active. */
-  tunnel?: TunnelStatusFrame
-  /** Relay-registry status, while the stable-origin relay is in play. */
-  relay?: RelayStatusFrame
   /** Latest /api fence posture probe, once a round has completed. */
   posture?: PostureFrame
 }

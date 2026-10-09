@@ -17,8 +17,6 @@ import {
   formatLastSeen,
   type DeviceFrame,
   type PostureFrame,
-  type RelayStatusFrame,
-  type TunnelStatusFrame,
 } from './pair-api.ts'
 import { deviceNameFromUserAgent } from './device-name.ts'
 import css from './remote.module.css'
@@ -34,7 +32,7 @@ const PairQrCode = memo(function PairQrCode({ url, className }: { url: string; c
 
 /** The panel's view state, owned by the entry component. */
 export type PanelState =
-  | { kind: 'lan-required'; tunnel?: TunnelStatusFrame }
+  | { kind: 'lan-required' }
   | { kind: 'loopback-required' }
   | { kind: 'unreachable' }
   | {
@@ -53,14 +51,10 @@ export type PanelState =
       lanAddresses: string[]
       /** The active pairing token itself (useful in Docker/reverse proxy topologies). */
       token?: string
-      /** Whether this QR is built on the configured public (tunneled) base. */
+      /** Whether this QR is built on the configured public (proxy) base. */
       public: boolean
-      /** The configured public (tunneled) base URL, when present. */
+      /** The configured public (proxy) base URL, when present. */
       publicBaseUrl?: string
-      /** Auto-tunnel status, while the auto-tunnel feature is active. */
-      tunnel?: TunnelStatusFrame
-      /** Relay-registry status, while the stable-origin relay is in play. */
-      relay?: RelayStatusFrame
       /** Latest /api posture probe, once a round has completed. */
       posture?: PostureFrame
     }
@@ -78,7 +72,7 @@ export interface RemotePanelProps {
   onCopyToken?(token: string): void
   /** Re-mint the QR against a different LAN address. */
   onPickAddress(address: string): void
-  /** Re-mint the QR against the configured public (tunneled) base. */
+  /** Re-mint the QR against the configured public (proxy) base. */
   onPickPublic(): void
   /** Revoke one paired device. */
   onRevoke(deviceId: string): void
@@ -205,21 +199,6 @@ export function RemotePanel({
             {t('pair.oneTimeHint')} {t('pair.dockerHint')}
           </p>
           {state.phase === 'stopped' && <p className={css.stoppedHint}>{t('stopped.hint')}</p>}
-          {state.tunnel !== undefined && state.tunnel.state !== 'running' && (
-            <p className={state.tunnel.state === 'failed' ? css.tunnelFailed : css.tunnelNote} role="status">
-              {state.tunnel.state === 'failed'
-                ? t('tunnel.failed', { error: state.tunnel.error ?? t('tunnel.unknownError') })
-                : t('tunnel.starting')}
-            </p>
-          )}
-          {state.relay?.state === 'registering' && (
-            <p className={css.tunnelNote} role="status">{t('relay.registering')}</p>
-          )}
-          {state.relay?.state === 'failed' && (
-            <p className={css.tunnelFailed} role="status">
-              {t('relay.failed', { error: state.relay.error ?? t('tunnel.unknownError') })}
-            </p>
-          )}
 
           {(state.publicBaseUrl !== undefined || state.lanAddresses.length > 1) && (
             <fieldset className={css.addresses}>

@@ -588,11 +588,10 @@ describe('/api/pair routes', () => {
   it('redacts the pairing oracle fields from unpaired status callers', async () => {
     const service = makeService()
     service.setPublicBaseUrl('https://phone.example.com')
-    service.setTunnelStatus({ state: 'running', url: 'https://xyz.trycloudflare.com' })
     service.issue('ws-7', undefined)
     const { port, close } = await serve(makeRoutes({ service }))
     try {
-      // No cookie: only pairing-relevant fields, no token/device/tunnel oracle.
+      // No cookie: only pairing-relevant fields, no token/device oracle.
       const unpaired = await call(port, 'GET', '/api/pair/status', { host: '192.168.1.5:3080' })
       expect(unpaired.status).toBe(200)
       expect(unpaired.body).toMatchObject({ ok: true, paired: false, requirePairingForLan: true, phase: 'waiting', lanAvailable: true })
@@ -601,7 +600,6 @@ describe('/api/pair routes', () => {
       expect(unpaired.body).not.toHaveProperty('deviceCount')
       expect(unpaired.body).not.toHaveProperty('onlineCount')
       expect(unpaired.body).not.toHaveProperty('publicUrl')
-      expect(unpaired.body).not.toHaveProperty('tunnel')
       // A live device cookie sees the full snapshot.
       await call(port, 'POST', '/api/pair/accept', { host: '192.168.1.5:3080', body: { token: 'tok-1' } })
       const paired = await call(port, 'GET', '/api/pair/status', { host: '192.168.1.5:3080', cookie: 'dsh_pair=tok-1' })

@@ -30,7 +30,7 @@ function makeClock(): PairingClock {
 
 /** Pair a device on a service: issue a token and immediately accept it. */
 function pairDevice(service: PairingService): string {
-  service.setPublicBaseUrl('https://pairing.example.trycloudflare.com')
+  service.setPublicBaseUrl('https://pairing.example.com')
   const { token } = service.issue()
   const result = service.accept(token)
   if (!result.ok) throw new Error(`pair failed: ${result.code}`)
@@ -237,7 +237,7 @@ describe('PairingService device persistence', () => {
   it('persists a User-Agent captured at accept', () => {
     const file = join(dir, 'devices.json')
     const service = new PairingService({ ...BASE_CONFIG, devicesFile: file }, makeClock())
-    service.setPublicBaseUrl('https://pairing.example.trycloudflare.com')
+    service.setPublicBaseUrl('https://pairing.example.com')
     const { token } = service.issue()
     const result = service.accept(token, 'Mozilla/5.0 TestPhone')
     expect(result.ok).toBe(true)

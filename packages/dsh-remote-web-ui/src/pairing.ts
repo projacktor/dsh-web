@@ -91,29 +91,6 @@ export interface DeviceSnapshot {
   userAgent?: string
 }
 
-/** One tunnel status frame (auto-tunnel only; undefined when disabled). */
-export interface TunnelStatus {
-  /** starting: binary/process warming up; running: URL minted; failed: no URL. */
-  state: 'starting' | 'running' | 'failed'
-  /** The minted public URL, once the tunnel reports it. */
-  url?: string
-  /** Human-readable failure detail. */
-  error?: string
-}
-
-/**
- * One relay-registry status frame (undefined while the stable-origin relay
- * is not in play: autoTunnel off, or the relay toggle disabled).
- */
-export interface RelayStatus {
-  /** registering: a sync is in flight; running: the mapping is accepted. */
-  state: 'off' | 'registering' | 'running' | 'failed'
-  /** The stable relay origin (`https://<id>.dsh-market.com`). */
-  url?: string
-  /** Human-readable failure detail of the last sync attempt. */
-  error?: string
-}
-
 /** One snapshot frame pushed to desktop status streams. */
 export interface PairingSnapshot {
   phase: PairingPhase
@@ -121,12 +98,8 @@ export interface PairingSnapshot {
   lanAvailable: boolean
   /** The LAN IP literals a QR can be built from (interface order). */
   lanAddresses: string[]
-  /** Configured public (tunneled) base URL, when present. */
+  /** Configured public base URL, when present. */
   publicUrl?: string
-  /** Auto-tunnel status, while the auto-tunnel feature is active. */
-  tunnel?: TunnelStatus
-  /** Relay-registry status, while the stable-origin relay is in play. */
-  relay?: RelayStatus
   /** Latest /api posture probe (undefined until the first round completes). */
   posture?: PostureSnapshot
   /** Opaque (non-secret) id of the active token (undefined when stopped/lan-required). */
@@ -221,11 +194,8 @@ export class PairingService {
   private tokenSerial = 0
   /** LAN base URLs keyed by the advertised IP literal (interface order). */
   private lanBases = new Map<string, string>()
-  /** Public (tunneled) base URL, e.g. a Cloudflare Tunnel quick URL. */
+  /** Public base URL in front of this server, when configured. */
   private publicBase: string | undefined
-  /** Auto-tunnel status, while the auto-tunnel feature is active. */
-  private tunnelStatus: TunnelStatus | undefined
-  private relayStatus: RelayStatus | undefined
   private posture: PostureSnapshot | undefined
   /** True when lastSeenAt changed since the last persist (flushed on sweep). */
   private dirty = false
@@ -370,31 +340,20 @@ export class PairingService {
     this.notify()
   }
 
-  /** The configured public (tunneled) base URL, when present. */
+  /** The configured public base URL, when present. */
   get publicBaseUrl(): string | undefined {
     return this.publicBase
   }
 
   /**
-   * Set or clear the public base URL (a tunnel in front of this server). The
-   * value is canonicalized to its origin: a trailing slash (what a browser
-   * address-bar copy produces) or a path would mint a dead `//pair-accept`
-   * link, which WHATWG resolves as an authority rather than a path.
+   * Set or clear the public base URL (a reverse proxy in front of this
+   * server). The value is canonicalized to its origin: a trailing slash (what
+   * a browser address-bar copy produces) or a path would mint a dead
+   * `//pair-accept` link, which WHATWG resolves as an authority rather than a
+   * path.
    */
   setPublicBaseUrl(url: string | undefined): void {
     this.publicBase = url === undefined ? undefined : canonicalBaseUrl(url)
-    this.notify()
-  }
-
-  /** Set or clear the auto-tunnel status frame (undefined when the feature is off). */
-  setTunnelStatus(status: TunnelStatus | undefined): void {
-    this.tunnelStatus = status
-    this.notify()
-  }
-
-  /** Set or clear the relay-registry status frame (undefined when not in play). */
-  setRelayStatus(status: RelayStatus | undefined): void {
-    this.relayStatus = status
     this.notify()
   }
 
@@ -559,8 +518,6 @@ export class PairingService {
       lanAvailable: this.lanBases.size > 0,
       lanAddresses: [...this.lanBases.keys()],
       ...(this.publicBase !== undefined ? { publicUrl: this.publicBase } : {}),
-      ...(this.tunnelStatus !== undefined ? { tunnel: this.tunnelStatus } : {}),
-      ...(this.relayStatus !== undefined ? { relay: this.relayStatus } : {}),
       ...(this.posture !== undefined ? { posture: this.posture } : {}),
       ...(token !== undefined ? { tokenId: token.record.id, tokenExpiresAt: token.record.expiresAt } : {}),
       deviceCount: this.devices.size,
@@ -661,8 +618,6 @@ function snapshotsEqual(a: PairingSnapshot, b: PairingSnapshot): boolean {
     && a.lanAvailable === b.lanAvailable
     && sameStrings(a.lanAddresses, b.lanAddresses)
     && a.publicUrl === b.publicUrl
-    && tunnelEqual(a.tunnel, b.tunnel)
-    && relayEqual(a.relay, b.relay)
     && postureEqual(a.posture, b.posture)
     && a.tokenId === b.tokenId
     && a.tokenExpiresAt === b.tokenExpiresAt
@@ -684,25 +639,13 @@ function devicesEqual(a: readonly DeviceSnapshot[], b: readonly DeviceSnapshot[]
   })
 }
 
-/** Tunnel frame equality (undefined equals undefined; fields compared shallowly). */
-function tunnelEqual(a: TunnelStatus | undefined, b: TunnelStatus | undefined): boolean {
-  return a === b || (a !== undefined && b !== undefined
-    && a.state === b.state && a.url === b.url && a.error === b.error)
-}
-
-/** Relay frame equality (same shape as the tunnel frame). */
-function relayEqual(a: RelayStatus | undefined, b: RelayStatus | undefined): boolean {
-  return a === b || (a !== undefined && b !== undefined
-    && a.state === b.state && a.url === b.url && a.error === b.error)
-}
-
 /**
  * Posture equality. A probe round can change this frame while every other field
  * stays put — the common case, since the probe re-runs on a settings change and
- * on a tunnel reaching running, and a quick-tunnel restart churns the probed
- * host set. Leaving the frame out of the comparison suppressed those emits, so
- * the loopback SSE stream and the desktop panel could sit on a stale "exposed"
- * (or stale "clean") verdict for as long as the phase and roster stayed put.
+ * a public-base edit churns the probed host set. Leaving the frame out of the
+ * comparison suppressed those emits, so the loopback SSE stream and the desktop
+ * panel could sit on a stale "exposed" (or stale "clean") verdict for as long
+ * as the phase and roster stayed put.
  */
 function postureEqual(a: PostureSnapshot | undefined, b: PostureSnapshot | undefined): boolean {
   if (a === b) return true

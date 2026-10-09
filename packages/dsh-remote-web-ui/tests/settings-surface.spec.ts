@@ -23,9 +23,6 @@ const CARD_FIELDS = [
   'cookieName',
   'requirePairingForLan',
   'publicBaseUrl',
-  'autoTunnel',
-  'tunnelToken',
-  'relay',
   'lanBind',
 ] as const
 

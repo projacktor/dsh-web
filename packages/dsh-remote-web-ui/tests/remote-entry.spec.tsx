@@ -135,46 +135,9 @@ describe('RemoteEntry', () => {
     expect(screen.getByText(/Settings → Plugins/).textContent).toContain('Settings → Plugins')
     expect(screen.queryByRole('button', { name: 'Stop' })).toBeNull()
     expect(document.querySelector('[data-testid="remote-qr"]')).toBeNull()
-    // The status stream stays open on the lan-required banner: the
-    // auto-tunnel may still be starting, and its running frame drives the
-    // re-issue below.
-    expect(FakeEventSource.instances).toHaveLength(1)
-    expect(FakeEventSource.instances[0]?.url).toBe('api/pair/events')
-  })
-
-  it('re-issues once the auto-tunnel reaches running and renders the ready QR', async () => {
-    const { fetch } = mount([
-      { ok: false, code: 'lan-required' },
-      {
-        ok: true,
-        url: 'https://tunnel.example/pair-accept?pair=tok-2',
-        token: 'tok-2',
-        expiresAt: Date.now() + 60_000,
-        lanAddresses: ['192.168.1.5'],
-        publicBaseUrl: 'https://tunnel.example',
-      },
-    ])
-    fireEvent.click(screen.getByRole('button', { name: 'Remote access' }))
-    await waitFor(() => expect(screen.getByText('This feature needs a LAN bind or a public address')).toBeTruthy())
-    const source = FakeEventSource.instances[0]
-    expect(source?.url).toBe('api/pair/events')
-    source?.emit({ type: 'state', phase: 'lan-required', lanAvailable: true, deviceCount: 0, onlineCount: 0, tunnel: { state: 'running', url: 'https://tunnel.example' } })
-    await waitFor(() => expect(screen.getByText('https://tunnel.example/pair-accept?pair=tok-2')).toBeTruthy())
-    expect(document.querySelector('[data-testid="remote-qr"]')).not.toBeNull()
-    expect(fetch.mock.calls.filter(call => call[0] === 'api/pair/issue')).toHaveLength(2)
-  })
-
-  it('stays on the lan-required banner while the auto-tunnel is starting', async () => {
-    const { fetch } = mount({ ok: false, code: 'lan-required' })
-    fireEvent.click(screen.getByRole('button', { name: 'Remote access' }))
-    await waitFor(() => expect(screen.getByText('This feature needs a LAN bind or a public address')).toBeTruthy())
-    const source = FakeEventSource.instances[0]
-    source?.emit({ type: 'state', phase: 'lan-required', lanAvailable: true, deviceCount: 0, onlineCount: 0, tunnel: { state: 'starting' } })
-    // Let a stray re-issue surface before asserting none happened.
-    await new Promise(resolve => setTimeout(resolve, 20))
-    expect(fetch.mock.calls.filter(call => call[0] === 'api/pair/issue')).toHaveLength(1)
-    expect(screen.getByText('This feature needs a LAN bind or a public address')).toBeTruthy()
-    expect(document.querySelector('[data-testid="remote-qr"]')).toBeNull()
+    // No status stream on the banner: without a public base there is no
+    // transition to wait for, and the events endpoint would just idle.
+    expect(FakeEventSource.instances).toHaveLength(0)
   })
 
   it('shows the loopback-required banner when the loopback-only fence rejects the mint', async () => {

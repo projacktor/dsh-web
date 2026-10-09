@@ -142,7 +142,7 @@ say "改写后 tarball: $TARBALL"
 
 # 步骤 2：引导 scratch profile（web 模板；先写 pnpm-workspace.yaml 的
 # allowBuilds / minimumReleaseAgeExclude，避免 pnpm 11 strict-dep-builds
-# 拦截 node-pty/protobufjs/cloudflared 或拒绝 <24h 新版本——同 install.sh）
+# 拦截 node-pty/protobufjs 或拒绝 <24h 新版本——同 install.sh）
 PROFILE_DIR="$DSH_HOME/profiles/web"
 cat > "$PROFILE_DIR/package.json" <<EOF
 {
@@ -167,7 +167,6 @@ autoInstallPeers: false
 allowBuilds:
   node-pty: true
   protobufjs: true
-  cloudflared: true
   cpu-features: true
   ssh2: true
 

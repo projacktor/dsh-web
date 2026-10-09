@@ -100,7 +100,7 @@ describe('rewrite rules', () => {
     expect(remoteChannelRequired({ hostname: 'app', protocol: 'http:' }, unavailable, true)).toBe(true)
     // A LAN origin and a tunnel origin stay remote, however the page is served.
     expect(remoteChannelRequired({ hostname: '192.168.1.5', protocol: 'http:' }, unavailable, true)).toBe(true)
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: 'https:' }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: 'https:' }, unavailable, true)).toBe(true)
     // Any scheme no web transport carries was delivered by an application on
     // this machine, so a shell scheme this build has never seen - or a file
     // page - is local by construction: the #1682 failure cannot come back
@@ -109,11 +109,11 @@ describe('rewrite rules', () => {
     expect(remoteChannelRequired({ hostname: 'shell.example.com', protocol: 'future-shell:' }, unavailable, true)).toBe(false)
     expect(remoteChannelRequired({ hostname: '', protocol: 'file:' }, unavailable, true)).toBe(false)
     // An unreadable scheme is not proof of a local page: the fence stays up.
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: '' }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: '' }, unavailable, true)).toBe(true)
     // Documents a network page mints stay on the web side of that line.
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: 'blob:' }, unavailable, true)).toBe(true)
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: 'data:' }, unavailable, true)).toBe(true)
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: 'about:' }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: 'blob:' }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: 'data:' }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: 'about:' }, unavailable, true)).toBe(true)
     // A scheme-local authority carrying the transport hook is the desktop
     // shell: local, no channel.
     expect(remoteChannelRequired({ hostname: 'app', protocol: 'app:', transportOwnsHost: true }, unavailable, true)).toBe(false)
@@ -121,7 +121,7 @@ describe('rewrite rules', () => {
     // device-gated landing grants it to a paired LAN/tunnel remote, and that
     // page must keep riding the gated channel.
     expect(remoteChannelRequired({ hostname: '192.168.1.5', protocol: 'http:', transportOwnsHost: true }, unavailable, true)).toBe(true)
-    expect(remoteChannelRequired({ hostname: 'box.trycloudflare.com', protocol: 'https:', transportOwnsHost: true }, unavailable, true)).toBe(true)
+    expect(remoteChannelRequired({ hostname: 'box.example.com', protocol: 'https:', transportOwnsHost: true }, unavailable, true)).toBe(true)
   })
 
   it('decides the channel lifecycle transitions (issue #808)', () => {
