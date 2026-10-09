@@ -49,8 +49,8 @@ dsh plugin --profile web add @linxin666/dsh-client-ui-market
 
 - host 半区（`src/index.ts`）不再注册任何设置：卡片的启用开关就是本包自身的 `Config` schema，宿主据此把它作为本行的设置页提供，浏览器半区经该行的配置表单读回。该半区只挂载仅回环的网关（`/api/market/installed`、`/api/market/install-skin`、`/api/market/install-pet`、`/api/market/install-preset`）。
 - 安装器核心（`src/core/installer.ts`）自行从 `dsh-market.com` 拉取清单、按保守白名单校验每个路径、原子写入（临时目录后 rename）——失败下载不会留下半成品目录；客户端从不提供 URL 或文件列表。
-- 创意工坊每项资产带明确的文件清单，`scripts/market-build` 重新生成 `market/dist` 后，新皮肤包即自动可装。
-- 「编辑推荐」类别读取 `manifest/editor-picks.json`：一份手工维护的引用清单（`market/editor-picks.json`，只含皮肤 / 宠物 / 插件），`scripts/market-build` 会对照自己生成的目录校验它——指向已删除或改名资产的条目会让构建失败，而不是静默消失。
+- 创意工坊每项资产带明确的文件清单，新皮肤包进入工坊目录后即自动可装。
+- 「编辑推荐」类别读取 `manifest/editor-picks.json`：一份随工坊目录维护的手工引用清单（只含皮肤 / 宠物 / 插件），指向已删除或改名资产的条目不会渲染。
 - 卡片声明 keyed 子槽位 `dsh-workshop.panel`，按类目渲染一格；预设面板注册 `preset` 格并以 owner props 收到目录记录与下载网关，因此商店对所有类目只做一次清单抓取、只维护一个网关。
 
 ## 安全模型

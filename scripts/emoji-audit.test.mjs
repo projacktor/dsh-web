@@ -40,7 +40,6 @@ describe('isSkippedPath', () => {
     assert.equal(isSkippedPath('node_modules/pkg/index.js'), true)
     assert.equal(isSkippedPath('packages/dsh-pet/lib/index.js'), true)
     assert.equal(isSkippedPath('market/dist/index.html'), true)
-    assert.equal(isSkippedPath('market/shell/src/app.ts'), true)
     assert.equal(isSkippedPath('pnpm-lock.yaml'), true)
     assert.equal(isSkippedPath('docs/assets/banner.png'), true)
     assert.equal(isSkippedPath('test-results/report.txt'), true)

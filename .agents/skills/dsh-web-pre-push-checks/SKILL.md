@@ -34,7 +34,6 @@ Run the narrowest owning test first for a behavior change. Add an affected-packa
 
 - `shared/` changes: run `pnpm sync-shared` followed by `pnpm sync-shared:check`.
 - Aggregate membership or package additions/removals: regenerate with `node scripts/aggregate.mjs`, then run `pnpm aggregate:check`.
-- Market assets, or the market content pin (`market-inputs.lock.json` or a `satellites/` gitlink move): run `pnpm market:fetch --check`, then `pnpm market:check`.
 - Skin, pet, or community-index content: that content and its gates belong to dsh-skins / dsh-pet / dsh-community-plugins, not to this repository, whose build only reads the content pinned by the submodule gitlink.
 - Browser runtime imports, dependency manifests, or client bundle changes: run `pnpm runtime-deps:check` and the affected package build.
 - Changed package README files: update the paired language and record the pair through `pnpm docs:write-pair` before `pnpm docs:check`.

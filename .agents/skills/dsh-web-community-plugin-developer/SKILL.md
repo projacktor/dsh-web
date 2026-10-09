@@ -31,10 +31,6 @@ pnpm build
 ## 3. dsh-web 这一侧
 
 - dsh-web 以已发布 npm 包 `@linxin666/dsh-client-ui-community-plugins` 消费社区插件索引；索引条目的改动是向 dsh-community-plugins 提 PR，不是向 dsh-web 提，`.github/workflows/reject-non-content-pr.yml` 会关闭投错仓库的 PR 并指向正确仓库。
-- 市场输入里的 community 内容，取自子模块 gitlink 记录的那个提交；`market-inputs.lock.json` 把 community 输入映射到 `satellites/dsh-community-plugins` 的仓库根（`.`）。
-- `pnpm market:fetch` 把 pinned 内容物化进 `.market-inputs/`：子模块工作树正好在 pinned 提交上就复制它，否则下载该提交的 tarball，所以从未初始化子模块的克隆行为一致。
-- `pnpm market:fetch --local` 从已初始化的子模块工作树物化它当前所在的提交，用来把你自己的改动送进市场构建；不在 pinned 提交上的检出在不加 `--local` 时会被忽略（运行时输出会说明）。这样构建出的 `market/dist` 来自未 pin 的内容，不得提交。
-- 开发循环：编辑 `satellites/dsh-community-plugins/community.json`，然后 `pnpm market:fetch --local` 与 `pnpm market:build`，从 `market/dist` 看市场产物；`pnpm market:check` 校验已提交的 `market/dist` 与 pinned 输入一致。
 
 ## 4. 验收清单
 

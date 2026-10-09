@@ -68,16 +68,11 @@ const TEST_FILE_RE = /\.(?:spec|test)\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/
 /** Directories that never hold first-party tests. */
 const SKIP_DIRS = new Set([
   '.git', 'node_modules', 'lib', 'dist', 'coverage', 'playwright-report',
-  'test-results', '.codegraph', '.zcode', '.pnpm-store', '.dsh', '.wrangler',
+  'test-results', '.codegraph', '.zcode', '.pnpm-store', '.dsh',
   'gui-test-screenshots', 'marketing',
-  // Fetched market content sources (market-inputs.lock.json): not our tests.
-  '.market-inputs',
   // Submodule checkouts of the satellite repositories: not our tests.
   'satellites',
 ])
-
-/** Vendored subtrees whose tests are not ours to standardize. */
-const SKIP_PREFIXES = ['market/shell/']
 
 /** Rule ids in report order. */
 export const RULES = [
@@ -498,7 +493,6 @@ function walk(dir, out) {
     const rel = relative(ROOT, full).split(sep).join('/')
     if (entry.isDirectory()) {
       if (SKIP_DIRS.has(entry.name)) continue
-      if (SKIP_PREFIXES.some((prefix) => (rel + '/').startsWith(prefix))) continue
       walk(full, out)
     } else if (entry.isFile() && TEST_FILE_RE.test(entry.name)) {
       out.push(rel)

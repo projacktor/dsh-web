@@ -86,11 +86,10 @@ card declares.
   so a failed download never leaves a half-written asset directory. The client never supplies URLs or
   file lists.
 - Every market asset carries an explicit file list, so a new skin pack ships to installs automatically
-  as soon as `scripts/market-build` regenerates `market/dist`.
+  as soon as the Workshop catalog lists the new asset.
 - The 编辑推荐 category reads `manifest/editor-picks.json`: a hand-authored reference list
-  (`market/editor-picks.json`, skins / pets / plugins only) that `scripts/market-build` validates
-  against the catalogs it emits, so a pick naming a removed or renamed asset fails the build instead
-  of disappearing silently.
+  (skins / pets / plugins only) maintained with the Workshop catalog, so a pick naming a removed or
+  renamed asset never renders.
 - The card declares the keyed child slot `dsh-workshop.panel` and renders one cell per contributed
   kind; the Presets panel registers the `preset` cell and receives the catalog records and the download
   gateway as owner props, so the store keeps one catalog fetch and one gateway for every kind.

@@ -48,8 +48,6 @@ pnpm aggregate:check
 pnpm runtime-deps:check
 pnpm docs:check
 pnpm i18n:check
-pnpm market:fetch
-pnpm market:check
 pnpm libs:check
 pnpm build
 node scripts/verify-version.mjs 0.4.5

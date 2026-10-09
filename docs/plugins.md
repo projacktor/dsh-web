@@ -40,7 +40,7 @@ packages/<name>/
 - `patchFrom`：该包的 `cordis.patch.yml` insert 行会被汇总进聚合包 patch；
 - `deps`：解析为包名写入聚合包 `package.json` 的 `dependencies`（`workspace:*`）。
 
-皮肤（新增或改动）不需要进任何 aggregate.yml：皮肤是纯资产目录，位于独立仓 [dsh-skins](https://github.com/zhu1090093659/dsh-skins) 的 `skins/<id>/`（市场构建与预览的共同来源，本仓以 submodule `satellites/dsh-skins` 的 gitlink 固定要读的提交）；npm 包 `files` 白名单只随发默认皮肤 `blue-fantasy`，其余皮肤由市场按需安装到 `$DSH_HOME/skins/<id>/` 后由皮肤中心管理。皮肤仓的 CI 跑 `skin-center:check`，本仓在 `pnpm market:fetch` 之后运行 `pnpm market:build` 刷新 market/dist。皮肤启用互斥由 `dsh-skin use` 管理（客户端原子切换，不改 cordis.patch.yml）。
+皮肤（新增或改动）不需要进任何 aggregate.yml：皮肤是纯资产目录，位于独立仓 [dsh-skins](https://github.com/zhu1090093659/dsh-skins) 的 `skins/<id>/`（本仓以 submodule `satellites/dsh-skins` 的 gitlink 固定要读的提交）；npm 包 `files` 白名单只随发默认皮肤 `blue-fantasy`，其余皮肤由市场按需安装到 `$DSH_HOME/skins/<id>/` 后由皮肤中心管理。皮肤仓的 CI 跑 `skin-center:check`。皮肤启用互斥由 `dsh-skin use` 管理（客户端原子切换，不改 cordis.patch.yml）。
 
 ### 4. 重新生成聚合包
 
@@ -108,8 +108,7 @@ dsh plugin --profile web add link:<dsh-web>/packages/dsh-web-all
 第三方插件作者可把自己的插件登记进创意工坊商店的插件目录（设置 → 创意工坊 → 插件）与 dsh-market.com 创意工坊站：
 
 1. 在 [dsh-community-plugins](https://github.com/zhu1090093659/dsh-community-plugins) 仓根目录的 `community.json` 追加条目：`id` / `name` / `nameEn` / `author` / `repo`（https:// 仓库 URL）必填，`description` / `descriptionEn` / `npm` 可选；`category`（一级分类）与 `subcategory`（二级分类）可选，合法枚举见该仓 `scripts/community-index.cjs` 的 `CATEGORIES` 与 `SUBCATEGORIES`，且 `subcategory` 只在 `category` 已填时被接受——分类与二级分类一同驱动创意工坊的两级筛选；
-2. 在该仓运行 `pnpm community:check` 校验数据（CI 门禁同款校验）；
-3. 运行 `node scripts/market-build` 重新生成 `market/dist` 清单（`manifest/plugins.json` 由 community.json 派生）并提交生成物（`market:check` 校验一致）。
+2. 在该仓运行 `pnpm community:check` 校验数据（CI 门禁同款校验）。
 
 索引只收录链接、不搬代码，条目版权归原作者，由维护者审核合并。
 

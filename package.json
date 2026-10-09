@@ -37,12 +37,7 @@
     "docs:list": "node scripts/verify-docs.mjs --list",
     "docs:write-pair": "node scripts/verify-docs.mjs --write",
     "sync-shared": "node scripts/sync-shared.mjs",
-    "sync-shared:check": "node scripts/sync-shared.mjs --check",
-    "market:build": "node scripts/market-build",
-    "market:check": "node scripts/market-build --check",
-    "market:fetch": "node scripts/market-fetch-inputs.mjs",
-    "market:verify": "node scripts/market-verify-assets.mjs",
-    "deploy:market": "node scripts/deploy-market"
+    "sync-shared:check": "node scripts/sync-shared.mjs --check"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.4",

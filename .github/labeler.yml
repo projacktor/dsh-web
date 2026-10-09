@@ -2,14 +2,10 @@ area/skins:
   - changed-files:
       - any-glob-to-any-file:
           - 'satellites/**'
-          - 'market-inputs.lock.json'
-          - 'scripts/market-fetch-inputs.mjs'
-          - 'scripts/market-verify-assets.mjs'
 
 area/market:
   - changed-files:
       - any-glob-to-any-file:
-          - 'market/**'
           - 'packages/dsh-market/**'
 
 area/i18n:

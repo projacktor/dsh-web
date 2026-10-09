@@ -6,7 +6,7 @@ dsh-web 是 DeepSeek Harness Web 的插件 monorepo，皮肤以皮肤中心插�
 
 ## 全景总览
 
-宿主进程按 profile 的 patch 行挂载各插件 host 半区；浏览器 GUI 经 `window.__ModuleLoader__` 模块表加载各插件 browser 半区；两侧经宿主 loopback HTTP 通信。市场站独立部署在 Cloudflare 上，插件与站点之间只有 HTTPS 清单读取与 Turnstile 门控的匿名写入。
+宿主进程按 profile 的 patch 行挂载各插件 host 半区；浏览器 GUI 经 `window.__ModuleLoader__` 模块表加载各插件 browser 半区；两侧经宿主 loopback HTTP 通信。市场站是作者运营的外部服务（本 fork 不部署站点基础设施）：插件与站点之间只有 HTTPS 清单读取与安装下载，没有任何后台数据上报。
 
 ```mermaid
 flowchart TB
@@ -18,13 +18,11 @@ flowchart TB
         ML["window.__ModuleLoader__ 模块表"] --> CLIENT["各插件 browser 半区 bundle"]
         CLIENT --> UI["官方槽位 UI：侧栏、设置页、聊天区"]
     end
-    subgraph cloud["Cloudflare"]
-        WORKER["dsh-market.com Worker：静态站与匿名点赞（Turnstile 门控，D1）"]
-    end
+    SITE["dsh-market.com（作者运营的外部市场）"]
     HOME["$DSH_HOME：skins、pets、agent-presets、.agent-presets"]
     CLIENT -- "loopback HTTP API" --> HOST
     HOST --> HOME
-    CLIENT -- "市场清单与点赞（HTTPS）" --> WORKER
+    CLIENT -- "市场清单读取与安装下载（HTTPS）" --> SITE
 ```
 
 ## 仓库目录分层
@@ -35,8 +33,7 @@ dsh-web/
 │   └── <name>/          # 独立 cordis bundle 包（host + client 两半区）
 ├── satellites/          # 4 个卫星仓库 git submodules（dsh-skins、dsh-pet、dsh-community-plugins、dsh-presets）
 ├── shared/              # 跨包事实源：构建预设、平台模块表、host 与 client 运行时模块
-├── scripts/             # 仓库维护工具（aggregate、sync-shared、market-build、verify-docs 等）
-├── market/              # dsh-market.com：src 静态站源、shell 试穿壳、dist 提交产物、worker 边缘 API
+├── scripts/             # 仓库维护工具（aggregate、sync-shared、verify-docs 等）
 └── docs/                # 长期文档、发布说明与归档
 ```
 
@@ -112,34 +109,16 @@ flowchart LR
     N["npm 包 files 白名单仅随发 blue-fantasy"] -.-> B
 ```
 
-## 创意工坊与市场站
+## 创意工坊
 
-市场内容的事实源随家族拆分分开：四个独立仓作为 git submodule 挂在 `satellites/`，各自的 gitlink 就是市场读到的提交，[market-inputs.lock.json](../market-inputs.lock.json) 记录哪个 submodule 承载哪份输入及其内容目录，[scripts/market-fetch-inputs.mjs](../scripts/market-fetch-inputs.mjs) 把该提交的内容目录物化到 `.market-inputs/`（submodule 检出停在该提交就地复制，否则按该提交下载 tarball，不需要历史，只取内容目录）；插件索引 `community.json` 与皮肤样式安全管线 `transformSkinCss` 从聚合包依赖树解析已发布包；预设取 dsh-presets 的 presets/、编辑推荐取 market/editor-picks.json（手工维护的皮肤 / 宠物 / 插件引用清单，构建时逐条校验可解析）。[scripts/market-build](../scripts/market-build) 派生 `market/dist`（`manifest/{skins,pets,plugins,presets,editor-picks}.json`、预览与试穿资产；产物提交进仓，`market:check` 校验一致）。tryon 试穿壳来自 market/shell 的构建产物，拷入 `dist/tryon/`。部署经 [scripts/deploy-market](../scripts/deploy-market)：先拉取内容输入并 `market-build --check`，再 wrangler 应用 D1 migrations 并部署 [Worker](../market/worker/wrangler.jsonc)（ASSETS 绑定 dist、Turnstile secret 守卫）；push 到 dev 且触及市场相关路径时由 [deploy-market.yml](../.github/workflows/deploy-market.yml) 自动上架，整站资产校验按 manifest 用 [scripts/market-verify-assets.mjs](../scripts/market-verify-assets.mjs) 逐条核对部署版本能以其 ASSETS 绑定为每个路径提供与提交文件一致的字节数（`POST /api/asset-attest`，共享密钥门控，未配置或密钥不符时 fail closed），由维护者在策略允许的网络上按需执行，不在部署车道内。匿名点赞必须保持 Turnstile 门控并经单个 D1 batch 写入（信任边界见根 [AGENTS.md](../AGENTS.md)）。
+创意工坊站（dsh-market.com）由上游作者运营，是本 fork 之外的服务：卡片只对它发起用户触发的 HTTPS 读取（清单、统计、预览与资产下载），不发送任何遥测、点赞或安装事件。资产安装经本包 host 半区的仅回环网关落盘到 `$DSH_HOME` 对应目录并写入 provenance 清单；插件一键安装走官方插件管理器。内容的事实源（皮肤、宠物、社区索引、预设）在四个卫星仓中维护，经各自仓库发布后由上游站点收录；卫星内容与站点收录的对应关系由上游仓库的文档拥有，本仓只钉扎卫星包版本。在无法访问该站的部署里，卡片保留浏览入口并展示加载失败，一切本机能力（已装列表、复制命令、本机管理入口）不受影响。
 
 ```mermaid
 flowchart LR
-    subgraph srcs["内容事实源"]
-        L["submodule gitlink：dsh-skins / dsh-pet / dsh-community-plugins / dsh-presets 的固定提交"]
-        S1["dsh-skins 仓：skins 目录各皮肤 skin.json"]
-        S2["dsh-pet 仓：assets 目录各宠物 pet.json"]
-        S3["@linxin666/dsh-client-ui-community-plugins：community.json（已发布包）"]
-        S4["dsh-presets 仓：presets 目录"]
-        S5["market/editor-picks.json：编辑推荐固定清单"]
-    end
-    L -- "node scripts/market-fetch-inputs.mjs 从该提交物化内容目录" --> FETCH[".market-inputs/"]
-    S1 -.-> FETCH
-    S2 -.-> FETCH
-    S4 -.-> FETCH
-    FETCH --> MB["node scripts/market-build"]
-    S3 --> MB
-    S5 --> MB
-    SHELL["market/shell 构建：浏览器版试穿壳"] --> DIST["market/dist（提交产物）"]
-    MB --> DIST
-    DIST -- "node scripts/deploy-market：wrangler deploy + D1 migrations" --> W["Cloudflare Worker：ASSETS、D1、Turnstile、定时任务"]
-    W -- "node scripts/market-verify-assets.mjs 逐条校验资产" --> VERIFY["部署后资产校验"]
-    W --> SITE["dsh-market.com"]
-    CARD["创意工坊卡片（dsh-market 插件）"] -- "读清单，一键安装进 DSH_HOME" --> SITE
-    CARD -- "点赞等 API（Turnstile 门控）" --> W
+    SITE["dsh-market.com（作者运营的外部市场）"]
+    CARD["创意工坊卡片（dsh-market 插件）"] -- "清单 / 统计 / 预览（HTTPS GET，用户触发）" --> SITE
+    CARD -- "资产下载经 host 仅回环网关" --> HOME["$DSH_HOME：skins、pets、agent-presets"]
+    CARD -- "插件一键安装" --> PM["官方插件管理器"]
 ```
 
 ## 共享层与同步管线
@@ -177,7 +156,7 @@ flowchart LR
 | dsh-web-settings | 设置页一级分区：家族插件启停开关与配置表单（`web-ui.plugin.item` 子槽） |
 | dsh-plugin-manager | 官方插件页的更新检查：单包区块、列表级检查/批量更新/重启工具条（安装、启停、卸载归官方页面） |
 | dsh-market | 创意工坊商店卡：浏览 dsh-market.com 并一键安装皮肤、宠物、插件、预设 |
-| dsh-preset-center | 社区预设：惰性库、启停、工坊 Presets 面板（独立仓，以已发布包消费；presets 目录按 submodule 钉扎进市场构建） |
+| dsh-preset-center | 社区预设：惰性库、启停、工坊 Presets 面板（独立仓，以已发布包消费） |
 | dsh-community-plugins | community.json 社区插件索引数据源（独立仓，以已发布包消费；惰性 cordis 行） |
 | dsh-skins | 皮肤中心：皮肤资产、试穿、无刷新原子切换（独立仓，以已发布包消费） |
 | dsh-pet | 注册表驱动桌宠：响应模型活动、命名与好感度（独立仓，以已发布包消费） |
@@ -197,13 +176,12 @@ flowchart LR
 
 ## 门禁与发布流
 
-日常与合并门禁的执行方式见 [development.md](development.md)；发布流程见 [publish-prep.md](publish-prep.md)：tag 是版本唯一来源，[release.yml](../.github/workflows/release.yml) 在 tag 推送后用 scripts/verify-version.mjs 校验各包版本与 tag 一致，再发布 `@linxin666/dsh-*`。市场站不走 npm 发布：dev 分支自动部署，main 不触发部署。
+日常与合并门禁的执行方式见 [development.md](development.md)；发布流程见 [publish-prep.md](publish-prep.md)：tag 是版本唯一来源，[release.yml](../.github/workflows/release.yml) 在 tag 推送后用 scripts/verify-version.mjs 校验各包版本与 tag 一致，再发布 `@linxin666/dsh-*`。
 
 ```mermaid
 flowchart TB
-    DEV["dev 分支改动"] --> G["门禁：typecheck、test、docs:check、i18n:check、aggregate:check、market:check、libs:check、test:scripts"]
+    DEV["dev 分支改动"] --> G["门禁：typecheck、test、docs:check、i18n:check、aggregate:check、libs:check、test:scripts"]
     G --> M["维护者集成：dev 测试通过后合入 main"]
     M --> T["从 main 打 vX.Y.Z tag"]
     T -- "release.yml + verify-version" --> NPM["npm 发布 @linxin666/dsh-*"]
-    DEV -- "触及市场路径时 deploy-market.yml" --> DEP["部署 dsh-market.com（独立于发布流程）"]
 ```

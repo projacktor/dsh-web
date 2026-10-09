@@ -32,9 +32,8 @@
   `pnpm community:check` 校验后随该仓 PR 提交；
 - **皮肤增加（新皮肤收录）**：新皮肤作为纯资产提交到
   [dsh-skins](https://github.com/zhu1090093659/dsh-skins) 仓的 `skins/<id>/`，
-  收录到我们部署的 dsh-market.com 服务器（Workshop 商店）供用户按需安装——
-  **默认安装不带**：skin-center npm 包只随附 `blue-fantasy`，新皮肤由用户经
-  Workshop 按需安装到 `$DSH_HOME/skins/<id>/`。**低质皮肤 PR 不予接受**（没有
+  收录后由用户经 Workshop 按需安装到 `$DSH_HOME/skins/<id>/`——
+  **默认安装不带**：skin-center npm 包只随附 `blue-fantasy`。**低质皮肤 PR 不予接受**（没有
   背景图、仅简单改色且样式存在明显问题，如暗色缺失、对比度不足、布局
   错位），请完善样式并附亮 / 暗试穿截图后再提交；
 - **宠物增加（新宠物收录）**：按宠物契约在
@@ -44,8 +43,7 @@
   [dsh-presets](https://github.com/zhu1090093659/dsh-presets) 仓的
   [presets README](https://github.com/zhu1090093659/dsh-presets/blob/main/presets/README.md)
   发布格式新增 `presets/<id>/`（`preset.yml` + `agent.cordis.yml`）并登记
-  `catalog.json`，收录到我们部署的 dsh-market.com 服务器（Workshop）供用户按需
-  安装——**默认安装不带**。预设是代码：composition 可挂载 npm 插件、加载预设
+  `catalog.json`，收录后由用户经 Workshop 按需安装——**默认安装不带**。预设是代码：composition 可挂载 npm 插件、加载预设
   目录内文件、执行 `!!js` 表达式，启用后运行在 DSH 宿主进程内，评审重点审核
   composition 实际加载内容与用途。
 
@@ -74,7 +72,7 @@ pnpm -r build
 pnpm typecheck && pnpm test && pnpm docs:check   # 提交前必过
 ```
 
-三个卫星仓（`dsh-skins` / `dsh-pet` / `dsh-community-plugins`）以 git submodule 挂在 `satellites/`，市场构建按各自的 gitlink 固定提交拉取内容。默认不需要检出：要就地改卫星仓内容时才 `git submodule update --init satellites/<仓名>`。该命令把工作树停在 gitlink 固定的提交上（detached HEAD），要提交改动先切到该仓的默认分支：`git -C satellites/<仓名> checkout main`。检出停在该固定提交时 `pnpm market:fetch` 直接复制该工作树；检出离开固定提交（切了分支，或提交了自己的改动）时，默认运行会明确提示并仍按固定提交构建，`pnpm market:fetch --local` 才读取该工作树——这样构建出的 `market/dist` 来自未固定内容，不得提交。
+三个卫星仓（`dsh-skins` / `dsh-pet` / `dsh-community-plugins`）以 git submodule 挂在 `satellites/`。默认不需要检出：要就地改卫星仓内容时才 `git submodule update --init satellites/<仓名>`。该命令把工作树停在 gitlink 固定的提交上（detached HEAD），要提交改动先切到该仓的默认分支：`git -C satellites/<仓名> checkout main`。
 
 **卫星仓的改动必须在卫星仓提交。** `satellites/<仓名>` 是独立的 git 仓库，
 在本仓写下的文件改动不会被本仓的 `git add` 收走：只 `git add` 本仓会把它们的
@@ -85,11 +83,8 @@ pnpm typecheck && pnpm test && pnpm docs:check   # 提交前必过
 2. **把该提交推到卫星仓的远程**：`git -C satellites/<仓名> push origin main`；
 3. 回到本仓把新的 gitlink 一起提交：`git add satellites/<仓名> && git commit`。
 
-三步缺一不可——只提交卫星仓，本仓仍指向旧提交，其他检出与市场构建读到的还是改动前的
-内容；只提交 gitlink 则根本不成立（卫星仓的提交才是被固定的对象）。漏掉第 2 步最隐蔽：
-本地检出的工作树停在该提交上，`pnpm market:fetch` 直接复制它、构建照常成功，但拉取内容时
-的 tarball 回退只按 SHA 寻址该提交，于是只存在于本地的提交让每一个全新克隆与 CI 的
-`pnpm market:fetch` 得到 `HTTP 404`——移动钉扎的那一次运行成功，掩盖了后续所有运行的失败。
+三步缺一不可——只提交卫星仓，本仓仍指向旧提交，其他检出读到的还是改动前的内容；
+只提交 gitlink 则根本不成立（卫星仓的提交才是被固定的对象）。
 卫星仓内改动的验收与门禁在该仓自己的 CI 跑（见该仓 `AGENTS.md`）。
 
 **卫星仓的 `main` 受分支规则集保护**：只有仓库所有者与拥有 write 权限的协作者可以直接 push，其他贡献者必须对该仓的 `main` 开 PR，由该仓 CI 作业转绿后合入。规则集始终要求 PR、禁止强推与删除，且不要求人工审批；豁免名单与决策见 [卫星分支推送策略 Note](.agents/notes/implemented/process/2026-10-04-satellite-main-branch-push-policy.md)。
@@ -111,8 +106,7 @@ active panel (#76 #87)`。提交信息禁止 emoji（全仓规则）。
 ## 提 PR 前检查清单
 
 1. **门禁全绿**：`pnpm typecheck` / `pnpm test` / `pnpm test:scripts` /
-   `pnpm docs:check`；涉及聚合包或市场时另跑
-   `pnpm aggregate:check` / `pnpm market:check`。
+   `pnpm docs:check`；涉及聚合包时另跑 `pnpm aggregate:check`。
 2. **文档同步**：改包 README 必须同 PR 维护中英双语三件套（`README.md` +
    `README.zh.md` + `README.i18n.yaml`），改完任一侧后重录配对记录：
 
@@ -151,8 +145,8 @@ pnpm docs:write-pair <包目录名>   # 如 dsh-ssh 或 dsh-update
 `node scripts/dsh-skin.cjs` 校验后按皮肤契约完善（skin.json v2、
 skin.css token 重映射，可选 patches.css / hooks.mjs / assets/），按该仓
 README 生成 `preview/{light,dark}.png`，`pnpm skin-center:check` 通过后随
-该仓 PR 提交。皮肤收录到我们部署的 dsh-market.com 服务器（Workshop）供
-用户按需安装，默认安装不带（见上文 PR 范围）。
+该仓 PR 提交。皮肤收录后由用户经 Workshop 按需安装，默认安装不带
+（见上文 PR 范围）。
 
 ### 宠物增加（新宠物收录）
 
@@ -169,10 +163,9 @@ README 生成 `preview/{light,dark}.png`，`pnpm skin-center:check` 通过后随
 预设 id，匹配 `^[a-z0-9][a-z0-9-]*$`，官方内置 id 保留），编辑 `preset.yml`
 （展示文案，单行标量）与 `agent.cordis.yml`（composition，service 行置于带
 isolate realm 的 group 内），在 `catalog.json` 登记条目（id / author / version
-必填），运行该仓的 `pnpm preset:check` 与 `pnpm test` 后随该仓 PR 提交。市场
-构建按 submodule 钉扎读取该仓的 `presets/`，因此预设在该仓合并后，还要由维护者
-移动本仓 `satellites/dsh-presets` 的 gitlink 并重建 `market/dist` 才到达
-dsh-market.com。预设启用后运行在 DSH 宿主进程内，PR 描述需说明 composition
+必填），运行该仓的 `pnpm preset:check` 与 `pnpm test` 后随该仓 PR 提交。预设收录
+经 Workshop 下发：预设在该仓合并后，由维护者移动本仓 `satellites/dsh-presets`
+的 gitlink 随本仓提交。预设启用后运行在 DSH 宿主进程内，PR 描述需说明 composition
 挂载了什么、为什么。
 
 ### 范围边界
