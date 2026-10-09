@@ -9,28 +9,28 @@
 #   3. 启动真实 `dsh web`（keyless，--port 0 取 OS 分配端口）；
 #   4. 运行 tests/e2e 无头渲染 lane（Playwright Chromium）：以宿主官方帧
 #      锚定启动、断言不内置的 better-sidebar 与被排除的 archive-manager 都
-#      缺席、无崩溃标记（alpha 分支不内置任何右侧面板插件；archive-manager
-#      仍为 alpha.2 排除）。
+#      缺席、无崩溃标记；fork-isolation 另断言页面无 telemetry/like/
+#      Turnstile/Cloudflare 出站请求。
 #
 # 用法：
 #   bash scripts/e2e-mount.sh
 #
-# 依赖改写（scripts/e2e-mount-rewrite，默认 auto 模式）：聚合包 tarball 里
-# 已在 npm 发布的 @linxin666/* 依赖保持 registry 安装（门禁原语义不变），
-# 仅尚未发布的新包（推送 → 发布窗口）自动打包仓库 workspace 改写为 file:
-# tarball——窗口期不再必红。改写为 file: 的家族 tarball 会被递归打补丁：它
-# 自己的 @linxin666/* 依赖（如 dsh-skins → dsh-client-ui-skin-center）走
-# 同一套规则，避免嵌套边在 npm 传播完成前回落到未发布的 registry 版本。
+# 依赖改写（scripts/e2e-mount-rewrite，默认 auto 模式）：本仓 workspace 构建
+# 的 @linxin666/* 依赖一律打包为 file: tarball 挂载——npm 上同版本号的是上游
+# 代码（仍带 telemetry/cloudflared 面，上游 remote-web-ui@0.4.5 直接依赖
+# cloudflared），企业 fork 的门禁不挂载它；非本仓 workspace 的家族依赖
+# （satellite）仍走 registry。FAMILY_TGZS_DIR 手工目录覆盖保留：给出时把
+# 家族依赖改写为目录内同名 tarball；workspace 包缺 tarball 仍是硬失败。
 #
 # 环境变量（均可省略）：
-#   DSH_CMD             dsh 命令；缺省 PATH 上的 `dsh`，回退 npx 拉官方包
+#   DSH_CMD             dsh 命令；缺省 PATH 上的 `dsh`，首词不在 PATH 时回退
+#                       npx 拉官方包；支持多词命令（如 pnpm --dir <path> dsh）
 #   WEB_UI_ALL_DIR      聚合包目录；缺省 packages/dsh-web-all
 #   FAMILY_TGZS_DIR     本地家族 tarball 目录（手工覆盖，优先级高于 auto
-#                       模式）：给出时把聚合包 tarball 里本仓 workspace 构建的
-#                       @linxin666/* 依赖改写为 file:<目录内同名 tarball>（验证
-#                       仓库当前构建，而非 npm 已发布版本）。已迁出为独立仓库、
-#                       从 npm 消费的家族包（宠物 / 皮肤中心 / 社区索引）仍走
-#                       registry；workspace 包缺 tarball 仍是硬失败。
+#                       模式）：给出时把家族依赖改写为 file:<目录内同名
+#                       tarball>。已迁出为独立仓库、从 npm 消费的家族包
+#                       （宠物 / 皮肤中心 / 社区索引）仍走 registry；
+#                       workspace 包缺 tarball 仍是硬失败。
 #   PORT                固定端口（默认 0 = OS 分配，从日志解析 URL）
 #   DSH_HOME_BASE       覆盖 scratch 根目录（默认 mktemp -d）；指向真实 home 时
 #                       直接拒绝，且调用方给出的根目录不会被整棵删除
@@ -55,10 +55,12 @@ die()  { printf '\033[31m[e2e-mount]\033[0m %s\n' "$*" >&2; exit 1; }
 command -v node >/dev/null 2>&1 || die "未找到 node（DSH 运行需要 Node.js >= 20）"
 command -v pnpm >/dev/null 2>&1 || die "未找到 pnpm（dsh plugin 转发给 pnpm）"
 
-# dsh CLI 解析：PATH 上的 dsh 优先，否则 npx 拉官方包
-if ! command -v "$DSH_CMD" >/dev/null 2>&1; then
+# dsh CLI 解析：DSH_CMD 首词在 PATH 上优先（支持 "pnpm --dir <path> dsh"
+# 这类多词命令），否则 npx 拉官方包
+read -r -a DSH_CMD_WORDS <<< "$DSH_CMD"
+if ! command -v "${DSH_CMD_WORDS[0]}" >/dev/null 2>&1; then
   if command -v npx >/dev/null 2>&1; then
-    say "PATH 上无 ${DSH_CMD}，回退 npx -y --package @deepseek-ai/dsh"
+    say "PATH 上无 ${DSH_CMD_WORDS[0]}，回退 npx -y --package @deepseek-ai/dsh"
     DSH_CMD="npx -y --package @deepseek-ai/dsh dsh"
   else
     die "未找到 $DSH_CMD 或 npx；请先安装 DSH CLI（npm i -g @deepseek-ai/dsh）或用 DSH_CMD 指定"
@@ -89,10 +91,23 @@ mkdir -p "$DSH_HOME/profiles/web" "$WORKSPACE_DIR"
 say "scratch home: ${DSH_HOME}（DSH_HOME=${DSH_HOME}）"
 
 SERVER_PID=""
+SERVER_PGRP=""
 cleanup() {
   local code=$?
   if [ -n "$SERVER_PID" ] && kill -0 "$SERVER_PID" 2>/dev/null; then
-    kill "$SERVER_PID" 2>/dev/null || true
+    # 多词 DSH_CMD（如 pnpm --dir <path> dsh）的 pnpm 包装器不转发也不响应
+    # SIGTERM，单杀 $! 会让 node 服务器变孤儿、wait 永不返回。setsid 启动时
+    # 整组 TERM，宽限 5s 后整组 KILL；无 setsid 的环境退回单进程 kill。
+    if [ -n "$SERVER_PGRP" ]; then
+      kill -TERM -- "-$SERVER_PID" 2>/dev/null || true
+      for _ in $(seq 1 50); do
+        kill -0 "$SERVER_PID" 2>/dev/null || break
+        sleep 0.1
+      done
+      kill -KILL -- "-$SERVER_PID" 2>/dev/null || true
+    else
+      kill "$SERVER_PID" 2>/dev/null || true
+    fi
     wait "$SERVER_PID" 2>/dev/null || true
   fi
   if [ -z "${KEEP_HOME:-}" ]; then
@@ -117,12 +132,12 @@ TARBALL="$(cd "$WEB_UI_ALL_DIR" && pwd)/$TARBALL"
 say "tarball: $TARBALL"
 
 # 步骤 1b：解析聚合包 tarball 依赖（scripts/e2e-mount-rewrite）。auto 模式
-# 只把 npm 上尚未发布的 @linxin666/* 依赖改写为仓库 workspace 打包的 file:
-# tarball（发布窗口治理）；FAMILY_TGZS_DIR 为手工全覆盖，优先级高于 auto 模式。
+# 把本仓 workspace 的 @linxin666/* 依赖一律改写为本地 file: tarball；
+# FAMILY_TGZS_DIR 为手工目录覆盖，优先级高于 auto 模式。
 if [ -n "$FAMILY_TGZS_DIR" ]; then
   [ -d "$FAMILY_TGZS_DIR" ] || die "FAMILY_TGZS_DIR 不存在：$FAMILY_TGZS_DIR"
 fi
-say "解析聚合包 tarball 依赖（auto=仅未发布走本地；FAMILY_TGZS_DIR=${FAMILY_TGZS_DIR:-无}）"
+say "解析聚合包 tarball 依赖（auto=本仓 workspace 走本地；FAMILY_TGZS_DIR=${FAMILY_TGZS_DIR:-无}）"
 REWRITE_DIR="$SCRATCH/tarball-rewrite"
 mkdir -p "$REWRITE_DIR"
 # GNU tar reads a "C:\..." argument as a remote host spec; --force-local keeps
@@ -191,9 +206,15 @@ if ! node -e '
 fi
 say "挂载已注册：dsh.profile.bundles 包含 @linxin666/dsh-web-all"
 
-# 步骤 5：启动 dsh web（--port 0 = OS 分配；keyless 可起）
+# 步骤 5：启动 dsh web（--port 0 = OS 分配；keyless 可起）。setsid 让服务器
+# 自成进程组，cleanup 可整组 TERM/KILL（见 cleanup 注释）。
 say "启动 dsh web（port=${PORT}）..."
-$DSH_CMD web --port "$PORT" > "$WEB_LOG" 2>&1 &
+if command -v setsid >/dev/null 2>&1; then
+  setsid $DSH_CMD web --port "$PORT" > "$WEB_LOG" 2>&1 &
+  SERVER_PGRP=1
+else
+  $DSH_CMD web --port "$PORT" > "$WEB_LOG" 2>&1 &
+fi
 SERVER_PID=$!
 
 URL=""
@@ -215,9 +236,9 @@ done
 [ -n "$URL" ] || { echo "=== 150s 内未等到 dsh web 就绪，日志尾部 ===" >&2; tail -40 "$WEB_LOG" >&2 || true; exit 1; }
 say "dsh web 就绪：${URL}（pid ${SERVER_PID}）"
 
-# 步骤 6：运行无头渲染 lane
+# 步骤 6：运行无头渲染 lane（挂载冒烟 + fork 隔离断言）
 say "运行 Playwright 无头渲染 lane..."
 DSH_E2E_URL="$URL" DSH_E2E_WORKSPACE="$WORKSPACE_DIR" \
   pnpm exec playwright test
 
-say "通过：聚合包挂载到真实 DSH 后无头渲染未崩溃，不内置的 better-sidebar 与被排除的 archive-manager 均缺席"
+say "通过：聚合包挂载到真实 DSH 后无头渲染未崩溃，页面无 telemetry/like/Turnstile/Cloudflare 出站请求，不内置的 better-sidebar 与被排除的 archive-manager 均缺席"

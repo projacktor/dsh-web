@@ -1,13 +1,11 @@
 /**
- * e2e-mount-rewrite contract: auto mode keeps npm-published family
- * dependencies on the registry and rewrites only unpublished ones to local
- * file: tarballs (the push-to-publish window fix); the manual family-dir
- * override still rewrites everything; a dependency that is unpublished and
- * missing from the workspace fails loudly.
- *
- * A dependency spec is an exact version for workspace-protocol family packages
- * and a semver range for the plugins consumed from npm; both are resolved
- * against the registry's published version list.
+ * e2e-mount-rewrite contract: auto mode packs every workspace family
+ * dependency from this checkout into a patched file: tarball (the corporate
+ * fork never mounts its registry twins — same-numbered npm releases are
+ * upstream code) and keeps family dependencies outside this workspace
+ * (extracted satellites) on the registry; the manual family-dir override
+ * still rewrites everything it covers; nested family edges are patched
+ * inside the packed tarballs.
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -15,7 +13,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { rewriteDependencies, findWorkspacePackage, packWorkspace, resolvesFromPublished } from './e2e-mount-rewrite'
+import { rewriteDependencies, findWorkspacePackage, packWorkspace } from './e2e-mount-rewrite'
 import { TAR_LOCAL } from './tar-args.cjs'
 
 function makeTmp() {
@@ -72,50 +70,34 @@ function readTgzPkg(tgz) {
   return JSON.parse(raw)
 }
 
-test('auto mode: published deps stay on npm, unpublished deps rewrite to file:', async () => {
+test('auto mode: workspace family deps pack locally, satellites stay on the registry', async () => {
   const tmp = makeTmp()
   const root = path.join(tmp, 'repo')
   makeWorkspace(root)
-  const pkgPath = makeTarballPkg(path.join(tmp, 'tarball'))
-  const published = new Set(['@linxin666/dsh-a@0.1.0'])
-  const packed = []
-  const report = await rewriteDependencies({
-    pkgPath,
-    root,
-    checkPublished: async (name, version) => published.has(name + '@' + version),
-    pack: packFake(packed),
+  const pkgPath = writePkg(path.join(tmp, 'tarball'), {
+    name: '@linxin666/dsh-web-all',
+    version: '9.9.9',
+    dependencies: {
+      '@linxin666/dsh-a': '0.1.0',
+      '@linxin666/dsh-b': '0.2.0',
+      '@linxin666/dsh-pet': '^0.3.24',
+      'dsh-external-fixture': '0.13.0',
+      react: '^18.3.1',
+    },
   })
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-  assert.equal(pkg.dependencies['@linxin666/dsh-a'], '0.1.0')
-  assert.match(pkg.dependencies['@linxin666/dsh-b'], /^file:.*dsh-b\.tgz$/)
-  assert.equal(pkg.dependencies['react'], '^18.3.1')
-  assert.equal(pkg.dependencies['dsh-external-fixture'], '0.13.0')
-  assert.equal(packed.length, 1)
-  assert.match(packed[0], /dsh-b$/)
-  assert.ok(report.some(line => line.includes('npm 已发布')))
-  assert.ok(report.some(line => line.includes('npm 未发布')))
-})
-
-test('auto mode: two unpublished deps rewrite to distinct tarballs', async () => {
-  const tmp = makeTmp()
-  const root = path.join(tmp, 'repo')
-  makeWorkspace(root)
-  const pkgPath = makeTarballPkg(path.join(tmp, 'tarball'))
   const packed = []
-  const report = await rewriteDependencies({
-    pkgPath,
-    root,
-    checkPublished: async () => false,
-    pack: packFake(packed),
-  })
+  const report = await rewriteDependencies({ pkgPath, root, pack: packFake(packed) })
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
   const tgzA = pkg.dependencies['@linxin666/dsh-a']
   const tgzB = pkg.dependencies['@linxin666/dsh-b']
   assert.match(tgzA, /^file:.*dsh-a\.tgz$/)
   assert.match(tgzB, /^file:.*dsh-b\.tgz$/)
   assert.notEqual(tgzA, tgzB)
+  assert.equal(pkg.dependencies['@linxin666/dsh-pet'], '^0.3.24')
+  assert.equal(pkg.dependencies['react'], '^18.3.1')
+  assert.equal(pkg.dependencies['dsh-external-fixture'], '0.13.0')
   assert.equal(packed.length, 2)
-  assert.ok(report.every(line => line.includes('npm 未发布')))
+  assert.ok(report.some(line => line.includes('保持 registry 安装')))
 })
 
 test('auto mode: pack returning the same tarball twice fails loudly', async () => {
@@ -128,7 +110,6 @@ test('auto mode: pack returning the same tarball twice fails loudly', async () =
     rewriteDependencies({
       pkgPath,
       root,
-      checkPublished: async () => false,
       pack: (dir, outDir) => {
         if (first !== null) return first
         first = makeTgz(outDir, { name: '@linxin666/dsh-a', version: '0.1.0' })
@@ -156,34 +137,19 @@ test('packWorkspace: two packs into the same parent dir stay distinct', () => {
   assert.equal(fs.readdirSync(path.dirname(tgzB)).filter(name => name.endsWith('.tgz')).length, 1)
 })
 
-test('auto mode: default packWorkspace packs and patches unpublished deps', async () => {
+test('auto mode: default packWorkspace packs and patches workspace deps', async () => {
   const tmp = makeTmp()
   const root = path.join(tmp, 'repo')
   makeWorkspace(root)
   const pkgPath = makeTarballPkg(path.join(tmp, 'tarball'))
-  await rewriteDependencies({
-    pkgPath,
-    root,
-    checkPublished: async () => false,
-  })
+  await rewriteDependencies({ pkgPath, root })
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
   assert.match(pkg.dependencies['@linxin666/dsh-b'], /^file:.*dsh-b.*\.tgz$/)
   // The packed tarball is a real tar and survives the in-place patch.
   assert.equal(JSON.parse(execFileSync('tar', [...TAR_LOCAL, '-xzf', pkg.dependencies['@linxin666/dsh-b'].slice(5), '-O', 'package/package.json'], { stdio: 'pipe' }).toString()).name, '@linxin666/dsh-b')
 })
 
-test('auto mode: unpublished dep missing from the workspace fails loudly', async () => {
-  const tmp = makeTmp()
-  const root = path.join(tmp, 'repo')
-  fs.mkdirSync(path.join(root, 'packages'), { recursive: true })
-  const pkgPath = makeTarballPkg(path.join(tmp, 'tarball'))
-  await assert.rejects(
-    rewriteDependencies({ pkgPath, root, checkPublished: async () => false }),
-    /找不到 workspace 包/,
-  )
-})
-
-test('auto mode: unpublished private workspace dep fails loudly (never publishable)', async () => {
+test('auto mode: a private workspace dep packs locally (the fork has no publish gate)', async () => {
   const tmp = makeTmp()
   const root = path.join(tmp, 'repo')
   makeWorkspace(root)
@@ -197,10 +163,9 @@ test('auto mode: unpublished private workspace dep fails loudly (never publishab
     version: '9.9.9',
     dependencies: { '@linxin666/dsh-private': '0.1.0' },
   })
-  await assert.rejects(
-    rewriteDependencies({ pkgPath, root, checkPublished: async () => false }),
-    /private（永远不会发布）/,
-  )
+  await rewriteDependencies({ pkgPath, root, pack: packFake([]) })
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
+  assert.match(pkg.dependencies['@linxin666/dsh-private'], /^file:.*dsh-private\.tgz$/)
 })
 
 test('family-dir mode: every family dep rewrites to a patched same-named copy', async () => {
@@ -261,11 +226,11 @@ test('family-dir mode: a family package outside this workspace stays on the regi
   assert.ok(report.some(line => line.includes('保持 registry 安装')))
 })
 
-test('auto mode: nested unpublished family deps rewrite inside the packed tarball', async () => {
+test('auto mode: nested workspace family deps rewrite inside the packed tarball', async () => {
   const tmp = makeTmp()
   const root = path.join(tmp, 'repo')
   makeWorkspace(root)
-  // dsh-b depends on the unpublished skin-x: the nested edge must be
+  // dsh-b depends on the workspace skin-x: the nested edge must be
   // rewritten inside the packed dsh-b tarball (dsh-skins -> skin-center).
   writePkg(path.join(root, 'packages', 'dsh-b'), {
     name: '@linxin666/dsh-b',
@@ -282,12 +247,7 @@ test('auto mode: nested unpublished family deps rewrite inside the packed tarbal
     },
   })
   const packed = []
-  await rewriteDependencies({
-    pkgPath,
-    root,
-    checkPublished: async () => false,
-    pack: packFake(packed),
-  })
+  await rewriteDependencies({ pkgPath, root, pack: packFake(packed) })
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
   const fileB = pkg.dependencies['@linxin666/dsh-b'].slice(5)
   const fileX = pkg.dependencies['@linxin666/dsh-skin-x'].slice(5)
@@ -321,58 +281,6 @@ test('findWorkspacePackage scans packages/', () => {
   assert.match(findWorkspacePackage(tmp, '@linxin666/dsh-a'), /packages[/\\]dsh-a$/)
   assert.match(findWorkspacePackage(tmp, '@linxin666/dsh-skin-x'), /packages[/\\]dsh-skin-x$/)
   assert.equal(findWorkspacePackage(tmp, '@linxin666/nope'), null)
-})
-
-test('published probe: a range resolves through any published version that satisfies it', () => {
-  const published = ['0.3.24', '0.3.25']
-  assert.equal(resolvesFromPublished('^0.3.24', published), true)
-  assert.equal(resolvesFromPublished('0.3.24', published), true)
-  assert.equal(resolvesFromPublished('^0.3.26', published), false)
-  assert.equal(resolvesFromPublished('0.3.26', published), false)
-})
-
-test('auto mode: a range dependency with a published match stays on the registry', async () => {
-  const tmp = makeTmp()
-  const root = path.join(tmp, 'repo')
-  makeWorkspace(root)
-  const pkgPath = writePkg(path.join(tmp, 'tarball'), {
-    name: '@linxin666/dsh-web-all',
-    version: '9.9.9',
-    dependencies: { '@linxin666/dsh-satellite': '^0.3.24' },
-  })
-  const packed = []
-  // The registry probe evaluates the spec, not just an exact version: a range
-  // already served by npm must stay on the registry, because the package is
-  // not in this workspace and substituting a local tarball fails the gate.
-  const report = await rewriteDependencies({
-    pkgPath,
-    root,
-    checkPublished: async (_name, spec) => resolvesFromPublished(spec, ['0.3.24', '0.3.25']),
-    pack: packFake(packed),
-  })
-  const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-  assert.equal(pkg.dependencies['@linxin666/dsh-satellite'], '^0.3.24')
-  assert.equal(packed.length, 0)
-  assert.ok(report.some(line => line.includes('npm 已发布')))
-})
-
-test('auto mode: a range with no published match and no workspace package fails loudly', async () => {
-  const tmp = makeTmp()
-  const root = path.join(tmp, 'repo')
-  fs.mkdirSync(path.join(root, 'packages'), { recursive: true })
-  const pkgPath = writePkg(path.join(tmp, 'tarball'), {
-    name: '@linxin666/dsh-web-all',
-    version: '9.9.9',
-    dependencies: { '@linxin666/dsh-satellite': '^0.3.24' },
-  })
-  await assert.rejects(
-    rewriteDependencies({
-      pkgPath,
-      root,
-      checkPublished: async (_name, spec) => resolvesFromPublished(spec, ['0.2.0']),
-    }),
-    /找不到 workspace 包/,
-  )
 })
 
 

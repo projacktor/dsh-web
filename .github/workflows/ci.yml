@@ -141,11 +141,12 @@ jobs:
         run: pnpm exec playwright install chromium
 
       # Pack every family package from THIS checkout and smoke those builds
-      # (FAMILY_TGZS_DIR full override): the published registry artifacts can
-      # lag a freshly pinned host cohort — their bundled clients were built
-      # for the previous one, so the registry path would test stale bits, not
-      # this commit (0.1.7-alpha.2 transition turned this lane red on exactly
-      # that skew). The release workflow keeps the registry consumer assertion.
+      # (FAMILY_TGZS_DIR full override): the registry artifacts of the same
+      # versions are upstream code carrying the removed telemetry/Cloudflare
+      # surface, so this lane must never mount them. Auto mode in
+      # scripts/e2e-mount-rewrite enforces the same rule; the explicit dir
+      # also covers the host-cohort skew case that turned this lane red
+      # before (0.1.7-alpha.2 transition).
       - name: Pack family tarballs from this checkout
         run: |
           mkdir -p "$RUNNER_TEMP/family-tgzs"

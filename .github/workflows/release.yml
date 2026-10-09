@@ -208,13 +208,12 @@ jobs:
         timeout-minutes: 10
         run: pnpm exec playwright install chromium
 
-      # The auto rewrite in scripts/e2e-mount-rewrite keeps the consumer
-      # assertion honest in both states: with the npm lane enabled every
-      # family dependency is published, so the tarball stays on the registry
-      # path (npm-strict consumer install); with the lane paused every packed
-      # version is unpublished, so each family dependency is packed from the
-      # workspace and installed as a file: tarball — the smoke then validates
-      # this tag's own builds.
+      # Corporate fork: the auto rewrite in scripts/e2e-mount-rewrite packs
+      # every workspace @linxin666/* dependency from this checkout and mounts
+      # it as a file: tarball — the same-numbered npm releases are upstream
+      # code still carrying the removed telemetry/Cloudflare surface, and the
+      # fork never publishes. Extracted satellites keep resolving from the
+      # registry.
       - name: Mount + headless-render smoke
         run: bash scripts/e2e-mount.sh
 

@@ -49,3 +49,17 @@ deployments. Two upstream properties are removed outright:
 - dsh-update's registry/release probes (GET-only checks against
   registry.npmjs.org and api.github.com) are a feature, not telemetry; they
   stay.
+- The e2e mount gate mounts fork builds only: `scripts/e2e-mount-rewrite`
+  auto mode packs every workspace `@linxin666/*` dependency into a `file:`
+  tarball and never mounts its npm twin — same-numbered registry releases are
+  upstream code that still carries the removed surface (upstream
+  `dsh-remote-web-ui@0.4.5` depends on `cloudflared`, so the registry path
+  would both violate the standing rule and die in pnpm 11
+  strict-dep-builds). Extracted satellites keep resolving from the registry
+  until they get corporate forks; `tests/e2e/fork-isolation.e2e.ts` asserts
+  the booted GUI sends no telemetry/like/install/Turnstile/Cloudflare
+  traffic.
+- Multi-word `DSH_CMD` (e.g. `pnpm --dir <install> dsh`) is supported by
+  `scripts/e2e-mount.sh`; the server runs under `setsid` so cleanup can
+  TERM/KILL the whole process group — a pnpm wrapper survives a plain
+  SIGTERM and would leave the scratch server orphaned.

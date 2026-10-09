@@ -4,26 +4,26 @@
  * e2e mount smoke (scripts/e2e-mount.sh).
  *
  * Modes:
- *   auto (default): every @linxin666/* dependency that already exists on
- *     npm at the packed version stays pointed at the registry (the gate's
- *     original "npm consumers can install this" assertion is unchanged);
- *     only a dependency NOT yet published — a brand-new family package in
- *     the push-to-publish window — is packed from its workspace directory
- *     and rewritten to a file: tarball. This removes the red window without
- *     weakening the gate for anything already published.
- *   --family-dir DIR: manual override (the old FAMILY_TGZS_DIR behavior):
- *     rewrite every @linxin666/* dependency this repository builds to the
- *     same-named tarball in DIR. A family-scoped dependency that is not a
- *     workspace package here — an extracted satellite consumed from npm —
- *     keeps resolving from the registry, while a workspace package the
- *     directory fails to cover stays a loud failure.
+ *   auto (default): corporate-fork semantics. Every @linxin666/* dependency
+ *     that is a workspace package of this repository is packed from its
+ *     workspace directory and rewritten to a file: tarball — the fork never
+ *     mounts the npm versions, whose same-numbered releases are upstream
+ *     code still carrying the removed telemetry/Cloudflare surface (upstream
+ *     remote-web-ui@0.4.5 depends on cloudflared, which this fork forbids).
+ *     A family dependency that is not a workspace package here — an
+ *     extracted satellite — keeps resolving from the registry.
+ *   --family-dir DIR: manual override: rewrite every @linxin666/* dependency
+ *     this repository builds to the same-named tarball in DIR. A
+ *     family-scoped dependency that is not a workspace package here keeps
+ *     resolving from the registry, while a workspace package the directory
+ *     fails to cover stays a loud failure.
  *
  * Tarballs switched to a file: spec are patched recursively: the packed
  * (or copied) tarball's own package.json goes through the same dependency
  * rewrite, so a nested family edge (dsh-skins -> dsh-client-ui-skin-center)
- * cannot fall back to the not-yet-published registry version while npm is
- * still propagating the release. Already-published siblings keep resolving
- * from npm — the registry probe stays authoritative.
+ * cannot fall back to the registry version while its workspace sibling is
+ * mounted from a local tarball. Already-published satellites keep resolving
+ * from npm.
  *
  * Usage:
  *   node scripts/e2e-mount-rewrite <tarball package.json> [--root DIR]
@@ -37,44 +37,15 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
-const semver = require('semver')
 
 const FAMILY_SCOPE = '@linxin666/'
-const REGISTRY = 'https://registry.npmjs.org'
 
 const { TAR_LOCAL } = require('./tar-args.cjs')
 
 /**
- * True when a dependency spec is served by the published version list.
- *
- * The spec is an exact version for family packages declared through the
- * workspace protocol (pnpm writes the resolved version into the packed
- * tarball) and a semver range for plugins consumed straight from npm, so both
- * shapes must be evaluated. A range has to resolve against some published
- * version; treating it as an exact version makes an already-released package
- * look unpublished, and the gate then substitutes a workspace tarball that no
- * longer exists.
- */
-function resolvesFromPublished(spec, versions) {
-  if (typeof spec !== 'string' || spec === '') return false
-  if (versions.includes(spec)) return true
-  if (!semver.validRange(spec)) return false
-  return versions.some(version => semver.satisfies(version, spec))
-}
-
-/** Default registry probe: true when the dependency spec resolves from npm. */
-async function checkPublished(name, spec) {
-  const res = await fetch(REGISTRY + '/' + name.replace('/', '%2f'))
-  if (!res.ok) return false
-  const data = await res.json()
-  const versions = Array.isArray(data.versions) ? data.versions : Object.keys(data.versions ?? {})
-  return resolvesFromPublished(spec, versions)
-}
-
-/**
  * Default packer: pnpm pack one workspace directory and return that tarball.
- * Each call uses a unique subdirectory of outDir so a second unpublished
- * family package cannot pick up the previous tarball via readdir + sort().pop().
+ * Each call uses a unique subdirectory of outDir so a second family
+ * package cannot pick up the previous tarball via readdir + sort().pop().
  */
 function packWorkspace(pkgDir, outDir) {
   const dest = fs.mkdtempSync(path.join(outDir, 'pack-'))
@@ -157,16 +128,18 @@ async function rewriteManifestDeps(pkgPath, opts, state, prefix) {
       report.push(name + ' → file:' + tgz + '（family-dir 全覆盖）')
     }
   } else {
-    const check = opts.checkPublished ?? checkPublished
     for (const name of familyNames) {
-      const version = pkg.dependencies[name]
-      if (await check(name, version)) {
-        report.push(name + '@' + version + ' npm 已发布（保持 registry 安装）')
+      // The fork never mounts the registry twins of the packages it builds:
+      // their same-numbered npm releases are upstream code. A family
+      // dependency outside this workspace is an extracted satellite, so it
+      // keeps resolving from the registry.
+      if (!findWorkspacePackage(opts.root, name)) {
+        report.push(name + ' 不在本仓 workspace，保持 registry 安装（satellite）')
         continue
       }
-      const tgz = await ensurePackedTgz(name, version, opts, state)
+      const tgz = await ensurePackedTgz(name, opts, state)
       pkg.dependencies[name] = 'file:' + tgz
-      report.push(name + '@' + version + ' npm 未发布 → file:' + tgz + '（发布窗口本地 tarball）')
+      report.push(name + ' → file:' + tgz + '（本仓 workspace 构建 → 本地 tarball）')
     }
   }
 
@@ -211,46 +184,33 @@ function createState() {
 }
 
 /**
- * Auto mode: pack an unpublished family package from the workspace and
- * patch its own family deps; returns the patched tarball path.
+ * Auto mode: pack a workspace family package from the current build and
+ * patch its own family deps; returns the patched tarball path. The caller
+ * has already checked the package is a workspace package.
  */
-async function ensurePackedTgz(name, version, opts, state) {
-  const key = name + '@' + version
-  const cached = state.patched.get(key)
+async function ensurePackedTgz(name, opts, state) {
+  const cached = state.patched.get(name)
   if (cached) return cached
-  if (state.inProgress.has(key)) {
+  if (state.inProgress.has(name)) {
     // Cyclic family edge: the path was assigned on first pack, before
     // patching started; the caller can reference it directly.
-    return state.pendingPath.get(key)
+    return state.pendingPath.get(name)
   }
   const dir = findWorkspacePackage(opts.root, name)
-  if (!dir) throw new Error('npm 未发布且仓库内找不到 workspace 包：' + name)
-  // A private workspace package can never be published: the auto-mode
-  // publish-window pack must not mask it, or the aggregate ships a
-  // registry dependency that fails every consumer install.
-  let manifest
-  try {
-    manifest = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'))
-  } catch (error) {
-    throw new Error('workspace 包清单不可读：' + name + '（' + error.message + '）')
-  }
-  if (manifest.private === true) {
-    throw new Error('npm 未发布且 workspace 包为 private（永远不会发布）：' + name + ' —— 公有聚合包不能依赖私有包')
-  }
   const pack = opts.pack ?? packWorkspace
   const tgz = pack(dir, state.packOut)
   if (state.packedTgz.has(tgz)) {
     throw new Error('pack 给 ' + name + ' 返回了已占用的 tarball：' + tgz)
   }
   state.packedTgz.add(tgz)
-  state.inProgress.add(key)
-  state.pendingPath.set(key, tgz)
+  state.inProgress.add(name)
+  state.pendingPath.set(name, tgz)
   try {
     await patchTarball(tgz, opts, state)
-    state.patched.set(key, tgz)
+    state.patched.set(name, tgz)
   } finally {
-    state.inProgress.delete(key)
-    state.pendingPath.delete(key)
+    state.inProgress.delete(name)
+    state.pendingPath.delete(name)
   }
   return tgz
 }
@@ -300,7 +260,6 @@ async function ensureFamilyDirTgz(name, opts, state) {
  * @param {string} opts.pkgPath - path to the extracted tarball's package.json.
  * @param {string} opts.root - repository root (workspace package lookup).
  * @param {string} [opts.familyDir] - manual override directory of family tarballs.
- * @param {(name: string, version: string) => Promise<boolean>} [opts.checkPublished] - registry probe (auto mode).
  * @param {(pkgDir: string, outDir: string) => string} [opts.pack] - workspace packer (auto mode).
  * @param {(message: string) => void} [opts.log]
  * @returns {Promise<string[]>} human-readable report lines.
@@ -350,8 +309,6 @@ if (require.main === module) main()
 module.exports = {
   rewriteDependencies,
   findWorkspacePackage,
-  checkPublished,
-  resolvesFromPublished,
   packWorkspace,
   FAMILY_SCOPE,
 }
