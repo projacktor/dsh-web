@@ -138,13 +138,6 @@ pnpm --filter @linxin666/dsh-update build
 
 Focused gates: `pnpm --filter @linxin666/dsh-update test`, `pnpm typecheck`,
 `pnpm test:standards`, and `pnpm libs:check` after the aggregate is rebuilt.
-
-## Telemetry
-
-One anonymous install heartbeat per browser per UTC day (package name only, silent
-failure), following `docs/telemetry.md`. No session content, paths, or update
-results are reported.
-
 ## Dependency rationale
 
 `@deepseek-ai/*` entries are the official SDK used for types and host faces;

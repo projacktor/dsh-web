@@ -118,12 +118,6 @@ pnpm --filter @linxin666/dsh-update build
 
 聚焦门禁：`pnpm --filter @linxin666/dsh-update test`、`pnpm typecheck`、
 `pnpm test:standards`，以及聚合重建后的 `pnpm libs:check`。
-
-## 遥测
-
-遵循 `docs/telemetry.md`：每个浏览器每个 UTC 日一次匿名安装心跳（仅包名，失败静默）。
-不上报会话内容、路径或更新结果。
-
 ## 依赖说明
 
 `@deepseek-ai/*` 是官方 SDK（类型与宿主面）；`react` / `react-dom` 是 GUI 自身的

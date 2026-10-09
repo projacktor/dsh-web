@@ -89,11 +89,6 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-plugin-manager
 - 启动 profile 的解析顺序为 `--profile`、宿主在 `profileContext` 上发布的启动 profile、打包启动器 argv 中按位置携带的 profile 目录（Electron 会剥掉 exec 开关，桌面宿主因此按位置拿到 profile 目录）、`DSH_PROFILE`、`web` 子命令、打包应用持久化的选择。已发布 profile 优先于环境变量：打包桌面端两者都不传，而全局 `DSH_PROFILE` workaround 可能指向运行中宿主根本不读的 profile。
 - 宿主发布的启动 profile 属外来输入：其名称做路径穿越校验，其目录必须是绝对且不含穿越的路径，其 patch 路径只有等于该 profile 自己的 `cordis.patch.yml` 时才被接受——patch 路径是写入目标。patch 写入走备份 + tmp + 原子 rename（`cordis.patch.yml.bak-plugin-manager`）。
 - 重复挂载保护只写 profile 清单的 `dsh.profile.bundles`，与 patch 写入同一纪律（备份 + tmp + 原子 rename，备份为 `package.json.bak-plugin-manager`）；只移除 CLI 刚加入且与既有 patch 行挂载重复的条目；保护写回失败会让任务显式失败，绝不静默留下破坏下次启动的状态。
-
-## 数据遥测
-
-浏览器半区每个 UTC 日向 dsh-market.com 发送一次匿名安装心跳：仅含一个 localStorage 随机 ID 与本包名，无其他数据。服务端只存储该 ID 的加盐哈希，不存 IP，且只暴露聚合计数。完整契约见 [docs/telemetry.md](../../docs/telemetry.md)。
-
 ## 许可证
 
 BSD-3-Clause。

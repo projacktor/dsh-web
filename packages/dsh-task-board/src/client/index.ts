@@ -32,7 +32,6 @@ import { registerTaskBoardPanel } from './native-panel.tsx'
 import { TaskBoardSettingsCard, TaskBoardSettingsCardController, type TaskBoardSettings } from './TaskBoardSettingsCard.tsx'
 import { en, zh, setRuntimeTranslate, type TaskBoardKey } from './locales.ts'
 import { HttpTaskBoardHostTransport } from './host-api.ts'
-import { reportDailyHeartbeat } from './telemetry.ts'
 import { installBoardCard } from './board-card-seat.ts'
 import { createServedEntryForm } from './settings-entry-form.ts'
 import { TaskBoardClientService } from './service.ts'
@@ -194,9 +193,6 @@ async function readPresetRoster(
  * @param ctx - client root context (services: sessions, workspaces).
  */
 export function apply(ctx: ClientContext): void {
-  // Anonymous install heartbeat (docs/telemetry.md): one beat per browser per
-  // UTC day, package name only, silent failure.
-  reportDailyHeartbeat([{ name: '@linxin666/dsh-client-ui-task-board' }])
 
   // A duplicated client injection (module factory executed twice in one page
   // lifetime) would otherwise mount a second sidebar entry and board view.

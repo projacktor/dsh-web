@@ -38,7 +38,6 @@ import {
 } from './remote-channel.ts'
 import { isLocalPage } from '../remote-channel-rules.ts'
 import { FenceNotice } from './FenceNotice.tsx'
-import { reportDailyHeartbeat } from './telemetry.ts'
 import { startMobileAdapt, type RemoteAdaptGlobal } from './mobile-adapt.ts'
 import { installPluginCard } from './plugin-card-seat.ts'
 import { createServedEntryForm } from './settings-entry-form.ts'
@@ -191,10 +190,6 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => () => {
     ;(window as unknown as { __dshRemoteAdapt?: RemoteAdaptGlobal }).__dshRemoteAdapt?.setEnabled?.(false)
   }, 'remote-web-ui: mobile-adapt')
-
-  // Anonymous install heartbeat (docs/telemetry.md): one beat per browser per
-  // UTC day, package name only, silent failure.
-  reportDailyHeartbeat([{ name: '@linxin666/dsh-remote-web-ui' }])
 
   ctx.effect(() => {
     try {

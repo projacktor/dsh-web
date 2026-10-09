@@ -26,7 +26,6 @@ import { createServedEntryForm } from './settings-entry-form.ts'
 import { en, zh, type MarketKey } from './locales.ts'
 import { bridgePluginManager } from './plugin-manager-bridge.ts'
 import { bridgeNativePluginFaces } from './native-plugin-faces.ts'
-import { reportDailyHeartbeat } from './telemetry.ts'
 
 export type {
   MarketCardProps,
@@ -102,9 +101,6 @@ export const inject = ['slots', 'locale', 'connection', 'configForms', 'remote']
 
 /** Register the market section and the plugin-manager bridge. */
 export function apply(ctx: ClientContext): void {
-  // Anonymous install heartbeat (docs/telemetry.md): one beat per browser per
-  // UTC day, package name only, silent failure.
-  reportDailyHeartbeat([{ name: '@linxin666/dsh-client-ui-market' }])
 
   ctx.effect(() => {
     try {

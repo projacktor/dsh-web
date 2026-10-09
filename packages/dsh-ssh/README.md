@@ -93,7 +93,3 @@ pnpm --filter @linxin666/dsh-ssh build   # tsc types + tsdown dual-half artifact
 - The ssh_config import expands `Include` (globs, `~`, several pathnames, relative to the config directory) but not environment variables or `%` tokens, and a multi-pattern `Host a b` line still imports only its first pattern.
 - Resume (broken-transfer continuation) is not implemented yet.
 - The transfer of Agent tools is a host-machine local path (same semantics as ssh-skill).
-
-## Telemetry
-
-The browser half sends one anonymous install heartbeat per UTC day to dsh-market.com: a random localStorage id plus this package's name, nothing else. The server stores only a salted hash of that id, never IP addresses, and exposes aggregate counts only. See [docs/telemetry.md](../../docs/telemetry.md) for the full contract.

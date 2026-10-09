@@ -201,7 +201,3 @@ The public path is the same round trip through a tunnel (see "Remote access over
 ## Dependency rationale
 
 `qrcode.react` (MIT, actively maintained, React 16–19 support) renders the QR as a dependency-free SVG component — no canvas, no server-side image generation. It is inlined into the client bundle at build time (like the official skin/turtle-ui plugins inline their non-shared deps), so profile installations need no extra runtime dependency beyond the dsh peer closure. `schemastery` is the DSH-standard config schema validator.
-
-## Telemetry
-
-The browser half sends one anonymous install heartbeat per UTC day to dsh-market.com: a random localStorage id plus this package's name, nothing else. The server stores only a salted hash of that id, never IP addresses, and exposes aggregate counts only. See [docs/telemetry.md](../../docs/telemetry.md) for the full contract.

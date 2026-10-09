@@ -201,7 +201,3 @@ pnpm run build
 ## 依赖说明
 
 `qrcode.react`（MIT，活跃维护，支持 React 16–19）以无依赖 SVG 组件渲染二维码——无 canvas、无服务端出图。它构建期内联进客户端 bundle（与官方 skin/turtle-ui 插件内联非共享依赖一致），profile 安装因此无需 dsh peer 闭包之外的运行时依赖。`schemastery` 是 DSH 标准配置 schema 校验器。
-
-## 遥测
-
-浏览器半区每个 UTC 日向 dsh-market.com 发送一条匿名安装心跳：一个随机 localStorage id 与本包名，仅此而已。服务端只存该 id 的加盐哈希，永不存 IP 地址，且只暴露聚合计数。完整契约见 [docs/telemetry.md](../../docs/telemetry.md)。

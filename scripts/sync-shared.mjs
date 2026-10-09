@@ -144,22 +144,6 @@ const MANIFEST = [
   },
 
   {
-    file: 'telemetry.ts',
-    source: 'shared/client/telemetry.ts',
-    targets: [
-      'packages/dsh-market/src/client/telemetry.ts',
-      'packages/dsh-git-graph/src/client/telemetry.ts',
-      'packages/dsh-plugin-manager/src/client/telemetry.ts',
-      'packages/dsh-remote-web-ui/src/client/telemetry.ts',
-      'packages/dsh-session-id/src/client/telemetry.ts',
-      'packages/dsh-skill-explorer/src/client/telemetry.ts',
-      'packages/dsh-ssh/src/client/telemetry.ts',
-      'packages/dsh-task-board/src/client/telemetry.ts',
-      'packages/dsh-web-settings/src/client/telemetry.ts',
-      'packages/dsh-update/src/client/telemetry.ts',
-    ],
-  },
-  {
     file: 'sse-leader.ts',
     source: 'shared/client/sse-leader.ts',
     targets: ['packages/dsh-git-graph/src/client/sse-leader.ts'],

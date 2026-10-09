@@ -46,11 +46,6 @@ dsh plugin --profile web add @linxin666/dsh-client-ui-market
 - 远程（非回环）浏览器完全无法驱动安装，只能看到只读目录与复制命令兜底。
 - 资产安装要求创意工坊站可达；清单或下载失败时，已存在的资产目录保持原样。
 - 点赞按设备计（浏览器保存匿名指纹），与任何登录体系无关。
-
-## 数据遥测
-
-浏览器半区每个 UTC 日向 dsh-market.com 发送一次匿名安装心跳：仅含一个 localStorage 随机 ID 与本包名，无其他数据。服务端只存储该 ID 的加盐哈希，不存 IP，且只暴露聚合计数。完整契约见 [docs/telemetry.md](../../docs/telemetry.md)。
-
 ## 架构
 
 - host 半区（`src/index.ts`）不再注册任何设置：卡片的启用开关就是本包自身的 `Config` schema，宿主据此把它作为本行的设置页提供，浏览器半区经该行的配置表单读回。该半区只挂载仅回环的网关（`/api/market/installed`、`/api/market/install-skin`、`/api/market/install-pet`、`/api/market/install-preset`）。

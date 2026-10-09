@@ -195,7 +195,3 @@ Set `DSH_POWER_SMOKE=1` to opt into the native helper smoke test on Windows, mac
 - Acceptance is enforced only where it can be: a run that never became a goal run (`/goal` refused or unavailable) and a teammate execution are not gated, and their record says so explicitly instead of implying they were verified. A deployment that serves no model catalog cannot resolve a judge route, so a completion claim is refused and recorded as an acceptance anomaly; once the anomaly budget is spent the card is held open rather than failed, and recovering needs a user to clear the anomalies.
 - The first version always judges with the coding criteria: there is no automatic rubric selection, so a non-coding task is judged by engineering criteria (the settings copy states this).
 - If a third-party verifier (for example the installed `dsh-llm-verifier`) also enables its own automatic acceptance, both judges score the same session independently: this board's acceptance gates completion while the other only steers, and no public SDK interface lets them share one verdict. Turning that plugin's automatic mode off is the only reliable way to avoid paying for two judgments.
-
-## Telemetry
-
-The browser half sends one anonymous install heartbeat per UTC day to dsh-market.com: a random localStorage id plus this package's name, nothing else. The server stores only a salted hash of that id, never IP addresses, and exposes aggregate counts only. See [docs/telemetry.md](../../docs/telemetry.md) for the full contract.

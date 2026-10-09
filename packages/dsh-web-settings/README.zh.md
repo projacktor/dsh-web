@@ -135,7 +135,3 @@ reverse_proxy 127.0.0.1:3080 {
 - 兼容桥只服务 dsh-web 全家桶设置，不会让 DSH 官方设置或凭据平面可被远程访问。
 - 旧版设置导入的覆盖范围是全家桶设置面：分区既会匹配本包所服务的全家桶命名空间（别名规则），也会匹配这些已服务 entry 声明的 Config 顶层字段（字段规则）。属于 DSH 官方设置面或其他非全家桶插件的分区会留在 `settings.yaml.imported` 中，只记为 skipped。
 - 字段规则 fail closed：被两个及以上已服务 entry 声明的同名字段，与无人声明的字段一样，分区继续留在改名文件中。
-
-## 数据遥测
-
-浏览器半区每个 UTC 日向 dsh-market.com 发送一次匿名安装心跳：仅含一个 localStorage 随机 ID 与本包名，无其他数据。服务端只存储该 ID 的加盐哈希，不存 IP，且只暴露聚合计数。完整契约见 [docs/telemetry.md](../../docs/telemetry.md)。

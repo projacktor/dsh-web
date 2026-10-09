@@ -17,7 +17,6 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import { SessionIdEntry } from './SessionIdEntry.tsx'
 import { en, zh, type SessionIdKey } from './locales.ts'
-import { reportDailyHeartbeat } from './telemetry.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -40,9 +39,6 @@ export const inject = ['slots', 'locale', 'sessions']
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
-  // Anonymous install heartbeat (docs/telemetry.md): one beat per browser per
-  // UTC day, package name only, silent failure.
-  reportDailyHeartbeat([{ name: '@linxin666/dsh-client-ui-session-id' }])
 
   ctx.effect(() => {
     try {

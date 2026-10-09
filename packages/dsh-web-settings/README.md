@@ -135,7 +135,3 @@ See [issue #513](https://github.com/zhu1090093659/dsh-web/issues/513).
 - The compatibility bridge serves dsh-web family settings only. It does not make the official DSH settings or credentials plane remotely available.
 - The legacy settings import covers the family settings surface: sections are matched against the family namespaces this package serves (alias rule) and against the top-level Config fields those served entries declare (field rule). A section belonging to the official settings surface or to a non-family plugin stays in `settings.yaml.imported` and is reported as skipped.
 - The field rule fails closed: a field name two or more served entries declare, like one no served entry declares, leaves the section in the renamed file.
-
-## Telemetry
-
-The browser half sends one anonymous install heartbeat per UTC day to dsh-market.com: a random localStorage id plus this package's name, nothing else. The server stores only a salted hash of that id, never IP addresses, and exposes aggregate counts only. See [docs/telemetry.md](../../docs/telemetry.md) for the full contract.

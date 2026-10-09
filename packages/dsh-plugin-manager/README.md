@@ -89,11 +89,6 @@ The contract source of truth is `src/core/service.ts` (`PluginManagerService`). 
 - The boot profile resolves from `--profile`, then the launched profile the Host publishes on `profileContext`, then the profile directory the packaged launcher carries in its own argv (Electron strips exec switches, so the desktop host sees its profile directory positionally), then `DSH_PROFILE`, then the `web` subcommand, then the packaged app's persisted selection. The published profile outranks the variable because the packaged Desktop client exports neither and a global `DSH_PROFILE` workaround can name a profile the running Host never reads.
 - The launched profile the Host publishes is foreign input: its name is traversal-checked, its directory must be an absolute traversal-free path, and its patch path is accepted only when it is that profile's own `cordis.patch.yml` — the patch path is a write target. Patch writes go through a backup copy plus tmp-write + atomic rename (`cordis.patch.yml.bak-plugin-manager`).
 - The duplicate-mount safeguard writes only the profile manifest's `dsh.profile.bundles`, under the same backup + tmp-write + atomic-rename discipline as patch writes (`package.json.bak-plugin-manager`). It removes only entries the CLI just added that duplicate an existing patch-row mount, and a failed safeguard write fails the job visibly rather than silently leaving a boot-breaking state.
-
-## Telemetry
-
-The browser half sends one anonymous install heartbeat per UTC day to dsh-market.com: a random localStorage id plus this package's name, nothing else. The server stores only a salted hash of that id, never IP addresses, and exposes aggregate counts only. See [docs/telemetry.md](../../docs/telemetry.md) for the full contract.
-
 ## License
 
 BSD-3-Clause.
