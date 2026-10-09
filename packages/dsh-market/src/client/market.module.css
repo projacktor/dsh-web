@@ -140,7 +140,7 @@
  * (whale-song tints bare anchors brand blue, which broke the repo link). */
 .cardFooter { display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 8px; }
 .actionRow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.market .actionRow > .like, .market .actionRow > .previewLink {
+.market .actionRow > .previewLink {
   font: inherit;
   font-size: 12px;
   line-height: 1.5;
@@ -155,8 +155,7 @@
   display: inline-flex;
   align-items: center;
 }
-.market .actionRow > .like { font-variant-numeric: tabular-nums; }
-.market .actionRow > .like:hover:enabled, .market .actionRow > .previewLink:hover {
+.market .actionRow > .previewLink:hover {
   color: var(--dsw-alias-label-primary);
   border-color: var(--dsw-alias-label-dimmed);
 }

@@ -158,16 +158,15 @@ const REMOTE = {
 }
 
 describe('MarketCard', () => {
-  it('user sees the skins tab rendered from remote data with its vote count', () => {
+  it('user sees the skins tab rendered from remote data', () => {
     // Given a remote catalog whose only skin carries 3 votes
     render(<MarketCard {...cardProps(new FakeScope({}), { remote: REMOTE, gateway: null, pluginManager: null })} />)
     // When the skins tab renders
-    // Then the card shows the remote skin name and the like button shows the remote vote count
+    // Then the card shows the remote skin name
     expect(screen.getByText('鲸吟').textContent).toBe('鲸吟')
-    expect(screen.getByText(/赞 3/).textContent).toBe('赞 3')
   })
 
-  it('user sees install and npm download metrics rendered apart from votes', () => {
+  it('user sees install and npm download metrics rendered on the cards', () => {
     // Given a catalog whose skin and plugin carry install counts and whose plugin has a download figure
     const withMetrics = {
       ...REMOTE,
@@ -178,8 +177,7 @@ describe('MarketCard', () => {
     }
     render(<MarketCard {...cardProps(new FakeScope({}), { remote: withMetrics, gateway: null, pluginManager: null, npmDownloads: { 'dsh-tui': 1_234 } })} />)
     // When the skins tab renders
-    // Then votes and the install count stay separate figures on the skin card
-    expect(screen.getByText(/赞 3/).textContent).toBe('赞 3')
+    // Then the install count shows on the skin card
     expect(screen.getByText('安装 3').textContent).toBe('安装 3')
     fireEvent.click(screen.getByRole('tab', { name: /插件/ }))
     // Then the plugin card carries its own install count and npm download figure
@@ -365,38 +363,6 @@ describe('MarketCard', () => {
   it('hides the install buttons for remote browsers (gateway null, face not loopback)', () => {
     render(<MarketCard {...cardProps(new FakeScope({}), { remote: REMOTE, gateway: null, pluginManager: null })} />)
     expect(screen.queryByRole('button', { name: /一键安装/ })).toBeNull()
-  })
-  it('rolls back an optimistic like when Turnstile fails', async () => {
-    render(<MarketCard {...cardProps(new FakeScope({}), {
-      remote: REMOTE,
-      gateway: null,
-      pluginManager: null,
-      turnstileToken: async () => { throw new Error('captcha unavailable') },
-    })} />)
-    fireEvent.click(screen.getByRole('button', { name: /赞 3/ }))
-    expect(screen.getByRole('button', { name: /赞 4/ })).toBeTruthy()
-    await waitFor(() => expect(screen.getByRole('button', { name: /赞 3/ })).toBeTruthy())
-    expect(screen.getByText('点赞失败')).toBeTruthy()
-  })
-
-  it('sends a Turnstile token and never a bypass header', async () => {
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ ok: true, votes: 9 })))
-    render(<MarketCard {...cardProps(new FakeScope({}), {
-      remote: REMOTE,
-      gateway: null,
-      pluginManager: null,
-      turnstileToken: async () => 'verified-token',
-    })} />)
-    fireEvent.click(screen.getByRole('button', { name: /赞 3/ }))
-    // The card also probes the installed snapshot on mount, so the like is the
-    // call that carries a Turnstile token, not simply the first one.
-    await waitFor(() => expect(fetchMock.mock.calls.some(([u]) => String(u).includes('/api/like'))).toBe(true))
-    const [url, init] = fetchMock.mock.calls.find(([u]) => String(u).includes('/api/like')) as [string, RequestInit]
-    expect(String(url)).toContain('/api/like')
-    const headers = new Headers(init.headers)
-    expect(headers.has('x-dsh-market-client')).toBe(false)
-    const body = JSON.parse(String(init.body)) as { turnstile_token?: string }
-    expect(body.turnstile_token).toBe('verified-token')
   })
 
   it('retries a failed live manifest load', async () => {
@@ -592,8 +558,7 @@ describe('MarketCard', () => {
     expect(screen.queryByRole('group', { name: '分类筛选' })).toBeNull()
     // Every entry keeps the affordances of its own kind.
     expect(screen.getByRole('button', { name: /复制安装命令/ })).toBeTruthy()
-    const likes = cards.map((text) => /赞 (\d+)/.exec(text)?.[1] ?? '')
-    expect(likes).not.toContain('')
+    expect(screen.queryByRole('button', { name: /赞 \d+/ })).toBeNull()
   })
 
   it('drops unresolvable editor picks and shows the empty state when none survive', () => {

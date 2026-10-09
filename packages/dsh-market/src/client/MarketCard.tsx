@@ -1,16 +1,15 @@
 /**
  * The market card: a first-level settings section that browses
- * dsh-market.com (skins / pets / community plugins), ranks entries by
- * device-backed likes, and offers one-click install — assets land in the
- * DSH home directories through the host gateway, while plugins go through the
- * official in-process plugin manager's remote face when the host publishes it
- * (the same call the official Plugins page makes), fall back to the family
- * pluginManager service otherwise, and hand management of an installed plugin
- * over to the official Plugins page instead of re-implementing it.
+ * dsh-market.com (skins / pets / community plugins) and offers one-click
+ * install — assets land in the DSH home directories through the host gateway,
+ * while plugins go through the official in-process plugin manager's remote
+ * face when the host publishes it (the same call the official Plugins page
+ * makes), fall back to the family pluginManager service otherwise, and hand
+ * management of an installed plugin over to the official Plugins page instead
+ * of re-implementing it.
  */
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react'
-import { marketTurnstileToken, TURNSTILE_ACTION_INSTALL } from './turnstile.ts'
+import { useEffect, useState, useSyncExternalStore, type ComponentProps, type ReactNode } from 'react'
 import { Button, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
@@ -154,8 +153,6 @@ export interface WorkshopPanelOwnerProps {
   installs?: Record<string, number>
   /** Download one asset into its DSH home directory. */
   install?: (id: string, force: boolean) => Promise<{ dest: string }>
-  /** Record a successful install with the market. */
-  reportInstall?: (id: string) => Promise<number>
 }
 
 interface MarketRecord {
@@ -210,25 +207,6 @@ const KIND_LABEL: Record<Kind, MarketKey> = {
 const TAB_ORDER: readonly Tab[] = ['picks', 'skin', 'pet', 'plugin', 'preset']
 const TAB_LABEL: Record<Tab, MarketKey> = { picks: 'tab.picks', ...KIND_LABEL }
 
-function deviceFp(): string {
-  const key = 'dsh-market-web-fp'
-  let fp = ''
-  try {
-    fp = window.localStorage.getItem(key) || ''
-  } catch {
-    /* storage unavailable (private mode, sandboxed): use an ephemeral fingerprint */
-  }
-  if (!fp || !/^[A-Za-z0-9_-]{16,64}$/.test(fp)) {
-    fp = window.crypto.randomUUID ? window.crypto.randomUUID() : 'fp-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36)
-    try {
-      window.localStorage.setItem(key, fp)
-    } catch {
-      /* ephemeral for this tab */
-    }
-  }
-  return fp
-}
-
 function messageOf(reason: unknown): string {
   return reason instanceof Error ? reason.message : String(reason)
 }
@@ -268,18 +246,8 @@ export type MarketCardProps =
     nativePluginManager?: NativePluginManagerService | null
     /** Official Plugins page navigation override; undefined reads the bridged service. */
     pluginNavigation?: PluginNavigationService | null
-    /** Turnstile token override (injected for tests). */
-    turnstileToken?: () => Promise<string>
     /** Npm-downloads data override: a data object (injected for tests) or a loader. */
     npmDownloads?: Record<string, number> | (() => Promise<Record<string, number> | null>)
-    /** Install-event recorder override (injected for tests); returns the fresh count. */
-    reportInstall?: (kind: Kind, id: string) => Promise<number>
-    /**
-     * Bulk install-event recorder override (injected for tests). One call
-     * reports every asset a bulk install covered; returns the fresh count
-     * per asset id.
-     */
-    reportInstallBatch?: (kind: Kind, ids: string[]) => Promise<Record<string, number>>
     /** Market-origin base for test injection. */
     marketOrigin?: string
   }
@@ -315,12 +283,11 @@ export function MarketCard(props: MarketCardProps): ReactNode {
   const [pluginList, setPluginList] = useState<readonly InstalledPluginItem[] | null>(null)
   const [pluginErrors, setPluginErrors] = useState<Record<string, string>>({})
   const [npmDownloads, setNpmDownloads] = useState<Record<string, number>>({})
-  const likeSeq = useRef(new Map<string, number>())
   // Bulk "install all missing" state. The first tap only arms the button,
   // because a full catalog pulls a lot of data and the count is not obvious
   // from the button label alone.
   const [installAllArmed, setInstallAllArmed] = useState(false)
-  const [installAll, setInstallAll] = useState<{ phase: 'idle' | 'checking' | 'running'; done: number; total: number; failed: number; reported: number; note: string } | null>(null)
+  const [installAll, setInstallAll] = useState<{ phase: 'idle' | 'checking' | 'running'; done: number; total: number; failed: number; note: string } | null>(null)
 
   // Remote data (test override or the live market site).
   useEffect(() => {
@@ -542,15 +509,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
       callout(id, t('installedAt', { path: result.dest }))
       const list = await gateway.list()
       setInstalled(list)
-      void reportInstall(kind, id).then((count) => {
-        setData((prev) => prev ? {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            installs: { ...(prev.stats.installs ?? { skin: {}, pet: {}, plugin: {}, preset: {} }), [kind]: { ...(prev.stats.installs?.[kind] ?? {}), [id]: count } },
-          },
-        } : prev)
-      }).catch(() => { /* non-fatal */ })
       if (kind === 'skin') {
         try {
           await fetch('api/skin-center/v2/active', {
@@ -576,15 +534,11 @@ export function MarketCard(props: MarketCardProps): ReactNode {
   }
 
   /**
-   * Install every published skin this machine does not have yet, then report
-   * the whole run to the market as ONE event.
+   * Install every published skin this machine does not have yet.
    *
    * The downloads go through the same loopback gateway one at a time, so each
    * asset keeps its own progress, its own failure and its own integrity
-   * write. Only the reporting is aggregated: a bulk install is one user
-   * gesture, so it costs one Turnstile challenge and one request rather than
-   * one per asset, and the per-asset counters it produces are the same rows a
-   * run of single installs would have written.
+   * write.
    */
   /** Published skins this machine does not have yet, in catalog order. */
   const missingInstallCount = (): number => {
@@ -595,27 +549,25 @@ export function MarketCard(props: MarketCardProps): ReactNode {
   const onInstallAll = async (): Promise<void> => {
     if (gateway === null) return
     setInstallAllArmed(false)
-    setInstallAll({ phase: 'checking', done: 0, total: 0, failed: 0, reported: 0, note: '' })
+    setInstallAll({ phase: 'checking', done: 0, total: 0, failed: 0, note: '' })
     const published = (data?.items.skin ?? []).map((item) => item.id)
     const have = new Set(installed.skins)
     const missing = published.filter((id) => !have.has(id))
     if (missing.length === 0) {
-      setInstallAll({ phase: 'idle', done: 0, total: 0, failed: 0, reported: 0, note: t('installAllNone', {}) })
+      setInstallAll({ phase: 'idle', done: 0, total: 0, failed: 0, note: t('installAllNone', {}) })
       return
     }
     if (!installAllArmed) {
-      setInstallAll({ phase: 'idle', done: 0, total: 0, failed: 0, reported: 0, note: '' })
+      setInstallAll({ phase: 'idle', done: 0, total: 0, failed: 0, note: '' })
       setInstallAllArmed(true)
       return
     }
     let done = 0
     let failed = 0
-    const landed: string[] = []
     for (const id of missing) {
-      setInstallAll({ phase: 'running', done, total: missing.length, failed, reported: 0, note: '' })
+      setInstallAll({ phase: 'running', done, total: missing.length, failed, note: '' })
       try {
         await gateway.install('skin', id, false)
-        landed.push(id)
       } catch {
         failed++
       }
@@ -624,30 +576,11 @@ export function MarketCard(props: MarketCardProps): ReactNode {
     try {
       setInstalled(await gateway.list())
     } catch { /* the per-asset callouts already carry the outcome */ }
-    // One aggregated report for the whole run.
-    let reported = 0
-    if (landed.length > 0) {
-      try {
-        const counts = await reportInstallBatch('skin', landed)
-        reported = Object.keys(counts).length
-        setData((prev) => prev ? {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            installs: {
-              ...(prev.stats.installs ?? { skin: {}, pet: {}, plugin: {}, preset: {} }),
-              skin: { ...(prev.stats.installs?.skin ?? {}), ...counts },
-            },
-          },
-        } : prev)
-      } catch { /* reporting is non-fatal: the install itself succeeded */ }
-    }
     setInstallAll({
       phase: 'idle',
       done,
       total: missing.length,
       failed,
-      reported,
       note: failed === 0 ? t('installAllDone', { count: done }) : t('installAllFailed', { count: failed }),
     })
   }
@@ -679,15 +612,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
     install.then(() => face.list()).then((list) => {
       setPluginList(list)
       callout(id, t('installed', {}))
-      void reportInstall('plugin', id).then((count) => {
-        setData((prev) => prev ? {
-          ...prev,
-          stats: {
-            ...prev.stats,
-            installs: { ...(prev.stats.installs ?? { skin: {}, pet: {}, plugin: {}, preset: {} }), plugin: { ...(prev.stats.installs?.plugin ?? {}), [id]: count } },
-          },
-        } : prev)
-      }).catch(() => { /* non-fatal */ })
     }).catch((reason: unknown) => {
       setPluginErrors((prev) => ({ ...prev, [id]: t('installFailed', { reason: messageOf(reason) }) }))
     }).finally(() => setInstalling(null))
@@ -700,76 +624,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
     if (pluginNavigation == null) return
     pluginNavigation.openBundle(managePackageName(item, pluginList ?? []))
   }
-
-  const onLike = async (kind: Kind, id: string): Promise<void> => {
-    const key = kind + ':' + id
-    const seq = (likeSeq.current.get(key) ?? 0) + 1
-    likeSeq.current.set(key, seq)
-    const current = votesOf(kind, id)
-    setData((prev) => prev ? {
-      ...prev,
-      stats: { ...prev.stats, [kind]: { ...prev.stats[kind], [id]: current + 1 } },
-    } : prev)
-    try {
-      const token = await (props.turnstileToken ?? marketTurnstileToken)()
-      const res = await fetch(MARKET_ORIGIN + '/api/like', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ kind, asset_id: id, device_fp: deviceFp(), turnstile_token: token }),
-      })
-      if (!res.ok) throw new Error('HTTP ' + res.status)
-      const out = (await res.json()) as { votes?: number }
-      if (likeSeq.current.get(key) !== seq) return
-      setData((prev) => prev ? {
-        ...prev,
-        stats: { ...prev.stats, [kind]: { ...prev.stats[kind], [id]: out.votes ?? current + 1 } },
-      } : prev)
-    } catch {
-      if (likeSeq.current.get(key) !== seq) return
-      setData((prev) => prev ? {
-        ...prev,
-        stats: { ...prev.stats, [kind]: { ...prev.stats[kind], [id]: current } },
-      } : prev)
-      setCallouts((prev) => ({ ...prev, [id]: t('likeFailed', {}) }))
-    }
-  }
-
-  const origin = props.marketOrigin ?? MARKET_ORIGIN
-  const reportInstall = props.reportInstall ?? (async (kind: Kind, id: string): Promise<number> => {
-    const token = await (props.turnstileToken ?? (() => marketTurnstileToken(TURNSTILE_ACTION_INSTALL)))()
-    const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : 'ins-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36)
-    const res = await fetch(origin + '/api/install', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ kind, asset_id: id, device_fp: deviceFp(), install_id: installId, turnstile_token: token }),
-    })
-    if (!res.ok) throw new Error('HTTP ' + res.status)
-    const out = (await res.json()) as { installs?: number }
-    return out.installs ?? 0
-  })
-
-  /**
-   * Report a whole bulk install as ONE request.
-   *
-   * A bulk install is one user gesture, so it must not spend one Turnstile
-   * challenge and one round trip per asset. The edge endpoint writes exactly
-   * the same per-asset rows and per-asset counts a run of single installs
-   * would - it only folds them into one D1 batch - so the public counters are
-   * indistinguishable from installing one at a time.
-   */
-  const reportInstallBatch = props.reportInstallBatch ?? (async (kind: Kind, ids: string[]): Promise<Record<string, number>> => {
-    if (ids.length === 0) return {}
-    const token = await (props.turnstileToken ?? (() => marketTurnstileToken(TURNSTILE_ACTION_INSTALL)))()
-    const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : 'ins-' + Math.random().toString(36).slice(2) + '-' + Date.now().toString(36)
-    const res = await fetch(origin + '/api/install-batch', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ kind, asset_ids: ids, device_fp: deviceFp(), install_id: installId, turnstile_token: token }),
-    })
-    if (!res.ok) throw new Error('HTTP ' + res.status)
-    const out = (await res.json()) as { installs?: Record<string, number> }
-    return out.installs ?? {}
-  })
 
   const chipClass = (isOn: boolean, isSub: boolean): string => {
     const cls = [css.filterChip]
@@ -891,7 +745,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
           {installAll !== null && installAll.note !== '' ? (
             <p className={installAll.failed > 0 ? css.bulkNoteWarn : css.bulkNote}>
               {installAll.note}
-              {installAll.reported > 0 ? ' · ' + t('installAllSummary', { count: installAll.reported }) : ''}
             </p>
           ) : null}
           {tab === 'preset' || tab === 'picks' ? null : (
@@ -937,7 +790,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
               gateway: gateway !== null,
               installs: data?.stats.installs?.preset ?? {},
               install: gateway === null ? undefined : (id: string, force: boolean) => gateway.install('preset', id, force),
-              reportInstall: (id: string) => reportInstall('preset', id),
             }, {
               entryKey: 'preset',
               fallback: <p className={css.empty} role="status">{t('presetPanel.missing')}</p>,
@@ -1004,9 +856,6 @@ export function MarketCard(props: MarketCardProps): ReactNode {
                       </span>
                       <span className={css.cardFooter}>
                         <span className={css.actionRow}>
-                          <button type="button" className={css.like} onClick={() => { void onLike(kind, id) }}>
-                            {t('like')} {votesOf(kind, id)}
-                          </button>
                           <button
                             type="button"
                             className={css.previewLink}

@@ -7,80 +7,6 @@ window.__ModuleLoader__.load({
 		let react = require("react");
 		let _deepseek_ai_dsh_client_ui_primitives = require("@deepseek-ai/dsh-client-ui-primitives");
 		let react_jsx_runtime = require("react/jsx-runtime");
-		//#region src/client/turnstile.ts
-		/** Turnstile token relay hosted on the market origin. */
-		const MARKET_ORIGIN$1 = "https://dsh-market.com";
-		const CHALLENGE_URL = "https://dsh-market.com/api/turnstile/challenge";
-		const TIMEOUT_MS = 1e4;
-		let ready = null;
-		let chain = Promise.resolve();
-		/** Create a UUID v4 even when randomUUID is unavailable on an HTTP LAN origin. */
-		function turnstileRequestId(source = crypto) {
-			if (typeof source.randomUUID === "function") return source.randomUUID();
-			const bytes = source.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
-			bytes[6] = bytes[6] & 15 | 64;
-			bytes[8] = bytes[8] & 63 | 128;
-			const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
-			return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-		}
-		function challengeFrame() {
-			if (ready !== null) return ready;
-			ready = new Promise((resolve, reject) => {
-				const iframe = document.createElement("iframe");
-				iframe.src = CHALLENGE_URL;
-				iframe.hidden = true;
-				iframe.title = "Market verification";
-				iframe.setAttribute("aria-hidden", "true");
-				iframe.onload = () => {
-					resolve(iframe);
-				};
-				iframe.onerror = () => {
-					iframe.remove();
-					ready = null;
-					reject(/* @__PURE__ */ new Error("turnstile-frame-failed"));
-				};
-				document.body.append(iframe);
-			});
-			return ready;
-		}
-		async function requestOne(action) {
-			const iframe = await challengeFrame();
-			const id = turnstileRequestId();
-			return new Promise((resolve, reject) => {
-				const timer = window.setTimeout(() => finish(/* @__PURE__ */ new Error("turnstile-timeout")), TIMEOUT_MS);
-				const onMessage = (event) => {
-					const data = event.data;
-					if (event.origin !== MARKET_ORIGIN$1 || event.source !== iframe.contentWindow) return;
-					if (data?.source !== "dsh-market-card" || data.type !== "token" || data.id !== id) return;
-					finish(null, typeof data.token === "string" ? data.token : "");
-				};
-				const finish = (error, token = "") => {
-					window.clearTimeout(timer);
-					window.removeEventListener("message", onMessage);
-					if (error !== null) {
-						iframe.remove();
-						ready = null;
-						reject(error);
-					} else resolve(token);
-				};
-				window.addEventListener("message", onMessage);
-				iframe.contentWindow?.postMessage({
-					source: "dsh-market-card",
-					type: "request",
-					id,
-					action
-				}, MARKET_ORIGIN$1);
-			});
-		}
-		/** Turnstile action for Workshop likes. */
-		const TURNSTILE_ACTION_LIKE = "market-like";
-		/** Serialize challenges because one invisible widget can execute only once at a time. */
-		function marketTurnstileToken(action = TURNSTILE_ACTION_LIKE) {
-			const request = chain.then(() => requestOne(action));
-			chain = request.then(() => void 0, () => void 0);
-			return request;
-		}
-		//#endregion
 		//#region \0dsh-css:packages/dsh-market/src/client/settings-card.module.css.mjs
 		const css$1 = ".RcIGlq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);border-radius:12px;list-style:none;transition:border-color .16s,background .16s}.RcIGlq_card:hover{border-color:var(--dsw-alias-label-dimmed)}.RcIGlq_cardOpen{background:var(--dsw-alias-bg-layer-2);border-color:var(--dsw-alias-label-dimmed)}.RcIGlq_header{appearance:none;box-sizing:border-box;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:12px;align-items:center;gap:13px;padding:16px;display:flex}.RcIGlq_header:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}.RcIGlq_headerStatic{box-sizing:border-box;border-radius:12px;align-items:center;gap:13px;width:100%;padding:16px;display:flex}.RcIGlq_headText{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.RcIGlq_mark{background:var(--dsw-alias-bg-module-platform);width:34px;height:34px;color:var(--dsw-alias-label-secondary);border-radius:10px;flex:none;place-items:center;transition:color .16s;display:grid}.RcIGlq_header:hover .RcIGlq_mark,.RcIGlq_cardOpen .RcIGlq_mark{color:var(--dsw-alias-label-primary)}.RcIGlq_name{color:var(--dsw-alias-label-primary);font-size:15px;font-weight:600;line-height:1.4}.RcIGlq_description{color:var(--dsw-alias-label-secondary);font-size:13px;line-height:1.5}.RcIGlq_pending{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.RcIGlq_chevron{color:var(--dsw-alias-label-tertiary);flex:none;width:16px;height:16px;transition:transform .16s,color .16s}.RcIGlq_header:hover .RcIGlq_chevron{color:var(--dsw-alias-label-secondary)}.RcIGlq_chevronOpen{transform:rotate(180deg)}.RcIGlq_body{border-top:1px solid var(--dsw-alias-border-l2);margin:0 16px;padding-bottom:8px}.RcIGlq_readOnly{color:var(--dsw-alias-label-secondary);margin:12px 0 0;font-size:12px;line-height:1.5}.RcIGlq_notExposed{color:var(--dsw-alias-state-warn-primary);margin:12px 0 0;font-size:12px;line-height:1.5}.RcIGlq_footer{border-top:1px solid var(--dsw-alias-border-l2);justify-content:flex-end;align-items:center;gap:8px;padding:12px 0 4px;display:flex}.RcIGlq_failed{min-width:0;color:var(--dsw-alias-state-error-primary,#b42318);text-overflow:ellipsis;white-space:nowrap;flex:1;margin:0;font-size:12px;line-height:1.5;overflow:hidden}.RcIGlq_discard,.RcIGlq_save{appearance:none;font:inherit;cursor:pointer;border:1px solid #0000;border-radius:8px;padding:5px 14px;font-size:13px;line-height:1.5}.RcIGlq_discard{border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);background:0 0}.RcIGlq_discard:hover:not(:disabled){color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.RcIGlq_save{background:var(--dsw-alias-label-primary);color:var(--dsw-alias-bg-layer-3)}.RcIGlq_discard:disabled,.RcIGlq_save:disabled{opacity:.4;cursor:default}.RcIGlq_discard:focus-visible,.RcIGlq_save:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.RcIGlq_field{flex-direction:column;gap:6px;padding:12px 0;display:flex}.RcIGlq_field+.RcIGlq_field{border-top:1px solid var(--dsw-alias-border-l2)}.RcIGlq_head{align-items:center;gap:8px;display:flex}.RcIGlq_label{min-width:0;color:var(--dsw-alias-label-primary);flex:1;font-size:13px;font-weight:500;line-height:1.5}.RcIGlq_badges{align-items:center;gap:8px;display:inline-flex}.RcIGlq_badge{white-space:nowrap;background:var(--dsw-alias-bg-module-platform);color:var(--dsw-alias-label-secondary);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:500;line-height:17px}.RcIGlq_reset{font:inherit;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;padding:0;font-size:12px;line-height:1.5}.RcIGlq_reset:hover:not(:disabled){color:var(--dsw-alias-label-primary)}.RcIGlq_reset:disabled{cursor:default}.RcIGlq_reset:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.RcIGlq_input,.RcIGlq_select{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.RcIGlq_input:focus-visible,.RcIGlq_select:focus-visible{border-color:var(--dsw-alias-brand-primary);outline:none}.RcIGlq_input:disabled,.RcIGlq_select:disabled{color:var(--dsw-alias-label-tertiary);cursor:default}.RcIGlq_inputInvalid{border:1px solid var(--dsw-alias-state-error-primary,#b42318);background:var(--dsw-alias-bg-layer-3);height:34px;font:inherit;color:var(--dsw-alias-label-primary);border-radius:8px;padding:0 12px;font-size:13px;line-height:1.5}.RcIGlq_inputInvalid:focus-visible{outline:2px solid var(--dsw-alias-state-error-primary,#b42318);outline-offset:1px;border-color:var(--dsw-alias-state-error-primary,#b42318)}.RcIGlq_selectWrap{position:relative}.RcIGlq_selectButton{appearance:none;text-align:left;cursor:pointer;justify-content:space-between;align-items:center;gap:8px;width:100%;display:flex}.RcIGlq_selectLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.RcIGlq_selectChevron{color:var(--dsw-alias-label-tertiary);flex:none;transition:transform .16s}.RcIGlq_selectChevronOpen{transform:rotate(180deg)}.RcIGlq_selectPopup{z-index:40;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-3);max-height:240px;box-shadow:0 8px 24px var(--dsw-alias-bg-mask-2);opacity:0;border-radius:8px;flex-direction:column;padding:4px;transition:opacity .1s,transform .1s;display:flex;position:absolute;top:calc(100% + 4px);left:0;right:0;overflow-y:auto;transform:translateY(-4px)}.RcIGlq_selectPopupOpen{opacity:1;transform:none}.RcIGlq_selectPopupClose{opacity:0;pointer-events:none;transform:translateY(-4px)}.RcIGlq_selectOption{color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;text-overflow:ellipsis;border-radius:6px;flex-shrink:0;padding:6px 10px;font-size:13px;line-height:1.5;overflow:hidden}.RcIGlq_selectOption:hover,.RcIGlq_selectOptionActive{background:var(--dsw-alias-interactive-bg-hover)}.RcIGlq_selectOptionSelected{color:var(--dsw-alias-brand-primary);background:color-mix(in srgb, var(--dsw-alias-brand-primary-new-colorprimary-new-color) 10%, transparent);font-weight:500}.RcIGlq_invalid{color:var(--dsw-alias-state-error-primary,#b42318);margin:0;font-size:12px;line-height:1.5}.RcIGlq_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;line-height:1.5}@media (prefers-reduced-motion:reduce){.RcIGlq_card,.RcIGlq_header,.RcIGlq_mark,.RcIGlq_chevron,.RcIGlq_chevronOpen,.RcIGlq_discard,.RcIGlq_save,.RcIGlq_selectChevron,.RcIGlq_selectChevronOpen,.RcIGlq_selectPopup{transition:none}}";
 		const tagId$1 = "@linxin666/dsh-client-ui-market/packages/dsh-market/src/client/settings-card.module.css";
@@ -1154,7 +1080,7 @@ window.__ModuleLoader__.load({
 		};
 		//#endregion
 		//#region \0dsh-css:packages/dsh-market/src/client/market.module.css.mjs
-		const css = ".bkhjFa_market{flex-direction:column;gap:10px;display:flex}.bkhjFa_tabs{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);font-weight:600}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:active:enabled{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:active:enabled{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-label-primary)}.bkhjFa_tabCount{opacity:.72;margin-left:6px;font-size:12px}.bkhjFa_search{width:100%;max-width:460px;font:inherit;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:6px 10px;font-size:13px;line-height:1.5}.bkhjFa_search::placeholder{color:var(--dsw-alias-label-tertiary)}.bkhjFa_search:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.bkhjFa_grid{grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px;margin:4px 0 0;padding:0;list-style:none;display:grid}.bkhjFa_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:8px;gap:10px;min-width:0;padding:12px;display:flex}.bkhjFa_card:hover{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_thumb{object-fit:cover;background:var(--dsw-alias-bg-layer-2);border-radius:6px;flex:none;place-items:center;width:72px;height:72px;display:grid}.bkhjFa_cardBody{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.bkhjFa_cardName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-weight:600;overflow:hidden}.bkhjFa_cardVersion{color:var(--dsw-alias-label-tertiary);margin-left:6px;font-size:11px;font-weight:400}.bkhjFa_cardMeta{color:var(--dsw-alias-label-tertiary);white-space:nowrap;align-items:center;gap:6px;font-size:12px;line-height:1.4;display:flex;overflow:hidden}.bkhjFa_badge{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);white-space:nowrap;border-radius:999px;flex:none;padding:0 8px;font-size:11px;line-height:1.6}.bkhjFa_badgeInstalled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-bg-layer-2)}.bkhjFa_metrics{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;flex-wrap:wrap;gap:4px 10px;font-size:11px;line-height:1.5;display:flex}.bkhjFa_cardDesc{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:1.45;display:-webkit-box;overflow:hidden}.bkhjFa_cardFooter{flex-direction:column;gap:8px;margin-top:auto;padding-top:8px;display:flex}.bkhjFa_actionRow{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like,.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;align-items:center;padding:1px 10px;font-size:12px;line-height:1.5;text-decoration:none;display:inline-flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like{font-variant-numeric:tabular-nums}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like:hover:enabled,.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_actionRowPrimary{align-items:stretch;gap:8px;display:flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install{min-width:0;font:inherit;color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:6px;flex:1 1 0;justify-content:center;align-items:center;min-height:30px;padding:4px 14px;font-size:12px;font-weight:600;line-height:1.5;display:inline-flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install:hover:enabled{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill);flex-grow:2}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:hover:enabled{background:var(--dsw-alias-button-primary-hover);border-color:var(--dsw-alias-button-primary-hover)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:disabled{opacity:.55;cursor:default}.bkhjFa_error{color:var(--dsw-alias-label-error,#c53030);margin:0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkRow{flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 0;display:flex}.bkhjFa_market .bkhjFa_bulkButton,.bkhjFa_market .bkhjFa_bulkArmed,.bkhjFa_market .bkhjFa_bulkCancel{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:6px;padding:3px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_bulkButton:hover:not(:disabled),.bkhjFa_market .bkhjFa_bulkCancel:hover:not(:disabled){border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-interactive-bg-hover)}.bkhjFa_market .bkhjFa_bulkButton:disabled,.bkhjFa_market .bkhjFa_bulkArmed:disabled{opacity:.55;cursor:default}.bkhjFa_market .bkhjFa_bulkArmed{border-color:var(--dsw-alias-state-danger-primary,#d93025);background:var(--dsw-alias-state-danger-primary,#d93025);color:#fff}.bkhjFa_market .bkhjFa_bulkNote,.bkhjFa_market .bkhjFa_bulkNoteWarn{margin:4px 0 0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkNote{color:var(--dsw-alias-state-success-primary)}.bkhjFa_market .bkhjFa_bulkNoteWarn{color:var(--dsw-alias-label-warning,#b06000)}.bkhjFa_callout{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px;line-height:1.4}.bkhjFa_filterRows{flex-direction:column;gap:6px;display:flex}.bkhjFa_filterRow{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipSub{color:var(--dsw-alias-label-tertiary);border-style:dashed;font-size:11px}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);border-style:solid;font-weight:600}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_filterCount{opacity:.72;margin-left:6px;font-size:11px}.bkhjFa_empty{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:13px;display:flex}.bkhjFa_retry{padding:3px 10px;font-size:12px}.bkhjFa_remoteNote{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px;line-height:1.4}.bkhjFa_modalActions{justify-content:flex-end;gap:8px;margin-top:10px;display:flex}";
+		const css = ".bkhjFa_market{flex-direction:column;gap:10px;display:flex}.bkhjFa_tabs{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);font-weight:600}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:active:enabled{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:active:enabled{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-label-primary)}.bkhjFa_tabCount{opacity:.72;margin-left:6px;font-size:12px}.bkhjFa_search{width:100%;max-width:460px;font:inherit;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:6px 10px;font-size:13px;line-height:1.5}.bkhjFa_search::placeholder{color:var(--dsw-alias-label-tertiary)}.bkhjFa_search:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.bkhjFa_grid{grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px;margin:4px 0 0;padding:0;list-style:none;display:grid}.bkhjFa_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:8px;gap:10px;min-width:0;padding:12px;display:flex}.bkhjFa_card:hover{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_thumb{object-fit:cover;background:var(--dsw-alias-bg-layer-2);border-radius:6px;flex:none;place-items:center;width:72px;height:72px;display:grid}.bkhjFa_cardBody{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.bkhjFa_cardName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-weight:600;overflow:hidden}.bkhjFa_cardVersion{color:var(--dsw-alias-label-tertiary);margin-left:6px;font-size:11px;font-weight:400}.bkhjFa_cardMeta{color:var(--dsw-alias-label-tertiary);white-space:nowrap;align-items:center;gap:6px;font-size:12px;line-height:1.4;display:flex;overflow:hidden}.bkhjFa_badge{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);white-space:nowrap;border-radius:999px;flex:none;padding:0 8px;font-size:11px;line-height:1.6}.bkhjFa_badgeInstalled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-bg-layer-2)}.bkhjFa_metrics{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;flex-wrap:wrap;gap:4px 10px;font-size:11px;line-height:1.5;display:flex}.bkhjFa_cardDesc{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:1.45;display:-webkit-box;overflow:hidden}.bkhjFa_cardFooter{flex-direction:column;gap:8px;margin-top:auto;padding-top:8px;display:flex}.bkhjFa_actionRow{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;align-items:center;padding:1px 10px;font-size:12px;line-height:1.5;text-decoration:none;display:inline-flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_actionRowPrimary{align-items:stretch;gap:8px;display:flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install{min-width:0;font:inherit;color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:6px;flex:1 1 0;justify-content:center;align-items:center;min-height:30px;padding:4px 14px;font-size:12px;font-weight:600;line-height:1.5;display:inline-flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install:hover:enabled{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill);flex-grow:2}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:hover:enabled{background:var(--dsw-alias-button-primary-hover);border-color:var(--dsw-alias-button-primary-hover)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:disabled{opacity:.55;cursor:default}.bkhjFa_error{color:var(--dsw-alias-label-error,#c53030);margin:0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkRow{flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 0;display:flex}.bkhjFa_market .bkhjFa_bulkButton,.bkhjFa_market .bkhjFa_bulkArmed,.bkhjFa_market .bkhjFa_bulkCancel{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:6px;padding:3px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_bulkButton:hover:not(:disabled),.bkhjFa_market .bkhjFa_bulkCancel:hover:not(:disabled){border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-interactive-bg-hover)}.bkhjFa_market .bkhjFa_bulkButton:disabled,.bkhjFa_market .bkhjFa_bulkArmed:disabled{opacity:.55;cursor:default}.bkhjFa_market .bkhjFa_bulkArmed{border-color:var(--dsw-alias-state-danger-primary,#d93025);background:var(--dsw-alias-state-danger-primary,#d93025);color:#fff}.bkhjFa_market .bkhjFa_bulkNote,.bkhjFa_market .bkhjFa_bulkNoteWarn{margin:4px 0 0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkNote{color:var(--dsw-alias-state-success-primary)}.bkhjFa_market .bkhjFa_bulkNoteWarn{color:var(--dsw-alias-label-warning,#b06000)}.bkhjFa_callout{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px;line-height:1.4}.bkhjFa_filterRows{flex-direction:column;gap:6px;display:flex}.bkhjFa_filterRow{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipSub{color:var(--dsw-alias-label-tertiary);border-style:dashed;font-size:11px}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);border-style:solid;font-weight:600}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_filterCount{opacity:.72;margin-left:6px;font-size:11px}.bkhjFa_empty{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:13px;display:flex}.bkhjFa_retry{padding:3px 10px;font-size:12px}.bkhjFa_remoteNote{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px;line-height:1.4}.bkhjFa_modalActions{justify-content:flex-end;gap:8px;margin-top:10px;display:flex}";
 		const tagId = "@linxin666/dsh-client-ui-market/packages/dsh-market/src/client/market.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -1193,7 +1119,6 @@ window.__ModuleLoader__.load({
 			"grid": "bkhjFa_grid",
 			"install": "bkhjFa_install",
 			"installPrimary": "bkhjFa_installPrimary",
-			"like": "bkhjFa_like",
 			"market": "bkhjFa_market",
 			"metrics": "bkhjFa_metrics",
 			"modalActions": "bkhjFa_modalActions",
@@ -1211,13 +1136,13 @@ window.__ModuleLoader__.load({
 		//#region src/client/MarketCard.tsx
 		/**
 		* The market card: a first-level settings section that browses
-		* dsh-market.com (skins / pets / community plugins), ranks entries by
-		* device-backed likes, and offers one-click install — assets land in the
-		* DSH home directories through the host gateway, while plugins go through the
-		* official in-process plugin manager's remote face when the host publishes it
-		* (the same call the official Plugins page makes), fall back to the family
-		* pluginManager service otherwise, and hand management of an installed plugin
-		* over to the official Plugins page instead of re-implementing it.
+		* dsh-market.com (skins / pets / community plugins) and offers one-click
+		* install — assets land in the DSH home directories through the host gateway,
+		* while plugins go through the official in-process plugin manager's remote
+		* face when the host publishes it (the same call the official Plugins page
+		* makes), fall back to the family pluginManager service otherwise, and hand
+		* management of an installed plugin over to the official Plugins page instead
+		* of re-implementing it.
 		*/
 		const MARKET_ORIGIN = "https://dsh-market.com";
 		/** Bridges the market config form onto the card's staged form. */
@@ -1269,20 +1194,6 @@ window.__ModuleLoader__.load({
 			picks: "tab.picks",
 			...KIND_LABEL
 		};
-		function deviceFp() {
-			const key = "dsh-market-web-fp";
-			let fp = "";
-			try {
-				fp = window.localStorage.getItem(key) || "";
-			} catch {}
-			if (!fp || !/^[A-Za-z0-9_-]{16,64}$/.test(fp)) {
-				fp = window.crypto.randomUUID ? window.crypto.randomUUID() : "fp-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				try {
-					window.localStorage.setItem(key, fp);
-				} catch {}
-			}
-			return fp;
-		}
 		function messageOf(reason) {
 			return reason instanceof Error ? reason.message : String(reason);
 		}
@@ -1337,7 +1248,6 @@ window.__ModuleLoader__.load({
 			const [pluginList, setPluginList] = (0, react.useState)(null);
 			const [pluginErrors, setPluginErrors] = (0, react.useState)({});
 			const [npmDownloads, setNpmDownloads] = (0, react.useState)({});
-			const likeSeq = (0, react.useRef)(/* @__PURE__ */ new Map());
 			const [installAllArmed, setInstallAllArmed] = (0, react.useState)(false);
 			const [installAll, setInstallAll] = (0, react.useState)(null);
 			(0, react.useEffect)(() => {
@@ -1578,26 +1488,6 @@ window.__ModuleLoader__.load({
 					callout(id, t("installedAt", { path: result.dest }));
 					const list = await gateway.list();
 					setInstalled(list);
-					reportInstall(kind, id).then((count) => {
-						setData((prev) => prev ? {
-							...prev,
-							stats: {
-								...prev.stats,
-								installs: {
-									...prev.stats.installs ?? {
-										skin: {},
-										pet: {},
-										plugin: {},
-										preset: {}
-									},
-									[kind]: {
-										...prev.stats.installs?.[kind] ?? {},
-										[id]: count
-									}
-								}
-							}
-						} : prev);
-					}).catch(() => {});
 					if (kind === "skin") try {
 						await fetch("api/skin-center/v2/active", {
 							method: "POST",
@@ -1618,15 +1508,11 @@ window.__ModuleLoader__.load({
 				}
 			};
 			/**
-			* Install every published skin this machine does not have yet, then report
-			* the whole run to the market as ONE event.
+			* Install every published skin this machine does not have yet.
 			*
 			* The downloads go through the same loopback gateway one at a time, so each
 			* asset keeps its own progress, its own failure and its own integrity
-			* write. Only the reporting is aggregated: a bulk install is one user
-			* gesture, so it costs one Turnstile challenge and one request rather than
-			* one per asset, and the per-asset counters it produces are the same rows a
-			* run of single installs would have written.
+			* write.
 			*/
 			/** Published skins this machine does not have yet, in catalog order. */
 			const missingInstallCount = () => {
@@ -1641,7 +1527,6 @@ window.__ModuleLoader__.load({
 					done: 0,
 					total: 0,
 					failed: 0,
-					reported: 0,
 					note: ""
 				});
 				const published = (data?.items.skin ?? []).map((item) => item.id);
@@ -1653,7 +1538,6 @@ window.__ModuleLoader__.load({
 						done: 0,
 						total: 0,
 						failed: 0,
-						reported: 0,
 						note: t("installAllNone", {})
 					});
 					return;
@@ -1664,7 +1548,6 @@ window.__ModuleLoader__.load({
 						done: 0,
 						total: 0,
 						failed: 0,
-						reported: 0,
 						note: ""
 					});
 					setInstallAllArmed(true);
@@ -1672,19 +1555,16 @@ window.__ModuleLoader__.load({
 				}
 				let done = 0;
 				let failed = 0;
-				const landed = [];
 				for (const id of missing) {
 					setInstallAll({
 						phase: "running",
 						done,
 						total: missing.length,
 						failed,
-						reported: 0,
 						note: ""
 					});
 					try {
 						await gateway.install("skin", id, false);
-						landed.push(id);
 					} catch {
 						failed++;
 					}
@@ -1693,35 +1573,11 @@ window.__ModuleLoader__.load({
 				try {
 					setInstalled(await gateway.list());
 				} catch {}
-				let reported = 0;
-				if (landed.length > 0) try {
-					const counts = await reportInstallBatch("skin", landed);
-					reported = Object.keys(counts).length;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							installs: {
-								...prev.stats.installs ?? {
-									skin: {},
-									pet: {},
-									plugin: {},
-									preset: {}
-								},
-								skin: {
-									...prev.stats.installs?.skin ?? {},
-									...counts
-								}
-							}
-						}
-					} : prev);
-				} catch {}
 				setInstallAll({
 					phase: "idle",
 					done,
 					total: missing.length,
 					failed,
-					reported,
 					note: failed === 0 ? t("installAllDone", { count: done }) : t("installAllFailed", { count: failed })
 				});
 			};
@@ -1746,26 +1602,6 @@ window.__ModuleLoader__.load({
 				(manager != null ? installViaOfficialManager(manager, spec, requestId) : face.install(spec)).then(() => face.list()).then((list) => {
 					setPluginList(list);
 					callout(id, t("installed", {}));
-					reportInstall("plugin", id).then((count) => {
-						setData((prev) => prev ? {
-							...prev,
-							stats: {
-								...prev.stats,
-								installs: {
-									...prev.stats.installs ?? {
-										skin: {},
-										pet: {},
-										plugin: {},
-										preset: {}
-									},
-									plugin: {
-										...prev.stats.installs?.plugin ?? {},
-										[id]: count
-									}
-								}
-							}
-						} : prev);
-					}).catch(() => {});
 				}).catch((reason) => {
 					setPluginErrors((prev) => ({
 						...prev,
@@ -1777,109 +1613,6 @@ window.__ModuleLoader__.load({
 				if (pluginNavigation == null) return;
 				pluginNavigation.openBundle(managePackageName(item, pluginList ?? []));
 			};
-			const onLike = async (kind, id) => {
-				const key = kind + ":" + id;
-				const seq = (likeSeq.current.get(key) ?? 0) + 1;
-				likeSeq.current.set(key, seq);
-				const current = votesOf(kind, id);
-				setData((prev) => prev ? {
-					...prev,
-					stats: {
-						...prev.stats,
-						[kind]: {
-							...prev.stats[kind],
-							[id]: current + 1
-						}
-					}
-				} : prev);
-				try {
-					const token = await (props.turnstileToken ?? marketTurnstileToken)();
-					const res = await fetch("https://dsh-market.com/api/like", {
-						method: "POST",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify({
-							kind,
-							asset_id: id,
-							device_fp: deviceFp(),
-							turnstile_token: token
-						})
-					});
-					if (!res.ok) throw new Error("HTTP " + res.status);
-					const out = await res.json();
-					if (likeSeq.current.get(key) !== seq) return;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							[kind]: {
-								...prev.stats[kind],
-								[id]: out.votes ?? current + 1
-							}
-						}
-					} : prev);
-				} catch {
-					if (likeSeq.current.get(key) !== seq) return;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							[kind]: {
-								...prev.stats[kind],
-								[id]: current
-							}
-						}
-					} : prev);
-					setCallouts((prev) => ({
-						...prev,
-						[id]: t("likeFailed", {})
-					}));
-				}
-			};
-			const origin = props.marketOrigin ?? MARKET_ORIGIN;
-			const reportInstall = props.reportInstall ?? (async (kind, id) => {
-				const token = await (props.turnstileToken ?? (() => marketTurnstileToken("market-install")))();
-				const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : "ins-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				const res = await fetch(origin + "/api/install", {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({
-						kind,
-						asset_id: id,
-						device_fp: deviceFp(),
-						install_id: installId,
-						turnstile_token: token
-					})
-				});
-				if (!res.ok) throw new Error("HTTP " + res.status);
-				return (await res.json()).installs ?? 0;
-			});
-			/**
-			* Report a whole bulk install as ONE request.
-			*
-			* A bulk install is one user gesture, so it must not spend one Turnstile
-			* challenge and one round trip per asset. The edge endpoint writes exactly
-			* the same per-asset rows and per-asset counts a run of single installs
-			* would - it only folds them into one D1 batch - so the public counters are
-			* indistinguishable from installing one at a time.
-			*/
-			const reportInstallBatch = props.reportInstallBatch ?? (async (kind, ids) => {
-				if (ids.length === 0) return {};
-				const token = await (props.turnstileToken ?? (() => marketTurnstileToken("market-install")))();
-				const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : "ins-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				const res = await fetch(origin + "/api/install-batch", {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({
-						kind,
-						asset_ids: ids,
-						device_fp: deviceFp(),
-						install_id: installId,
-						turnstile_token: token
-					})
-				});
-				if (!res.ok) throw new Error("HTTP " + res.status);
-				return (await res.json()).installs ?? {};
-			});
 			const chipClass = (isOn, isSub) => {
 				const cls = [market_module_css_default.filterChip];
 				if (isSub) cls.push(market_module_css_default.filterChipSub);
@@ -2002,9 +1735,9 @@ window.__ModuleLoader__.load({
 									children: t("cancel", {})
 								}) : null]
 							}) : null,
-							installAll !== null && installAll.note !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+							installAll !== null && installAll.note !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 								className: installAll.failed > 0 ? market_module_css_default.bulkNoteWarn : market_module_css_default.bulkNote,
-								children: [installAll.note, installAll.reported > 0 ? " · " + t("installAllSummary", { count: installAll.reported }) : ""]
+								children: installAll.note
 							}) : null,
 							tab === "preset" || tab === "picks" ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 								className: market_module_css_default.search,
@@ -2093,8 +1826,7 @@ window.__ModuleLoader__.load({
 								catalogState: failed ? "error" : loading ? "loading" : "ready",
 								gateway: gateway !== null,
 								installs: data?.stats.installs?.preset ?? {},
-								install: gateway === null ? void 0 : (id, force) => gateway.install("preset", id, force),
-								reportInstall: (id) => reportInstall("preset", id)
+								install: gateway === null ? void 0 : (id, force) => gateway.install("preset", id, force)
 							}, {
 								entryKey: "preset",
 								fallback: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
@@ -2191,39 +1923,24 @@ window.__ModuleLoader__.load({
 													className: market_module_css_default.cardFooter,
 													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 														className: market_module_css_default.actionRow,
-														children: [
-															/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-																type: "button",
-																className: market_module_css_default.like,
-																onClick: () => {
-																	onLike(kind, id);
-																},
-																children: [
-																	t("like"),
-																	" ",
-																	votesOf(kind, id)
-																]
-															}),
-															/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-																type: "button",
-																className: market_module_css_default.previewLink,
-																onClick: () => {
-																	props.openExternal(kind === "skin" ? "https://dsh-market.com/preview.html?skin=" + encodeURIComponent(id) + "&theme=light&chrome=0" : "https://dsh-market.com/");
-																},
-																children: t("preview")
-															}),
-															(kind === "plugin" || kind === "skin") && item.repo ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-																className: market_module_css_default.previewLink,
-																href: item.repo,
-																target: "_blank",
-																rel: "noreferrer",
-																onClick: (event) => {
-																	event.preventDefault();
-																	props.openExternal(item.repo ?? MARKET_ORIGIN);
-																},
-																children: t("repository")
-															}) : null
-														]
+														children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+															type: "button",
+															className: market_module_css_default.previewLink,
+															onClick: () => {
+																props.openExternal(kind === "skin" ? "https://dsh-market.com/preview.html?skin=" + encodeURIComponent(id) + "&theme=light&chrome=0" : "https://dsh-market.com/");
+															},
+															children: t("preview")
+														}), (kind === "plugin" || kind === "skin") && item.repo ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+															className: market_module_css_default.previewLink,
+															href: item.repo,
+															target: "_blank",
+															rel: "noreferrer",
+															onClick: (event) => {
+																event.preventDefault();
+																props.openExternal(item.repo ?? MARKET_ORIGIN);
+															},
+															children: t("repository")
+														}) : null]
 													}), kind === "plugin" || gateway !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 														className: market_module_css_default.actionRowPrimary,
 														children: [
@@ -2538,7 +2255,6 @@ window.__ModuleLoader__.load({
 			"installAllDone": "已安装 {count} 款皮肤",
 			"installAllNone": "所有皮肤均已安装",
 			"installAllFailed": "{count} 款皮肤安装失败",
-			"installAllSummary": "已汇总上报 {count} 款安装记录",
 			"installed": "已安装",
 			"manageInPluginPage": "在插件页管理",
 			"installFailed": "安装失败：{reason}",
@@ -2553,9 +2269,6 @@ window.__ModuleLoader__.load({
 			"preview": "预览",
 			"openSite": "打开创意工坊站",
 			"repository": "源码仓库",
-			"like": "赞",
-			"liked": "已赞",
-			"likeFailed": "点赞失败",
 			"badge.market": "dsh-market.com",
 			"install.path": "安装目录：{path}",
 			"installedAt": "安装到 {path}",
@@ -2646,7 +2359,6 @@ window.__ModuleLoader__.load({
 			"installAllDone": "Installed {count} skin(s)",
 			"installAllNone": "Every skin is already installed",
 			"installAllFailed": "{count} skin(s) failed to install",
-			"installAllSummary": "Reported {count} install(s) as one batch",
 			"installed": "Installed",
 			"manageInPluginPage": "Manage in Plugins",
 			"installFailed": "Install failed: {reason}",
@@ -2661,9 +2373,6 @@ window.__ModuleLoader__.load({
 			"preview": "Preview",
 			"openSite": "Open the Workshop site",
 			"repository": "Source repository",
-			"like": "Like",
-			"liked": "Liked",
-			"likeFailed": "Like failed",
 			"badge.market": "dsh-market.com",
 			"install.path": "Install directory: {path}",
 			"installedAt": "Installed to {path}",
@@ -2673,76 +2382,6 @@ window.__ModuleLoader__.load({
 			"npmDownloads": "npm {count} last 30d",
 			"remote.note": "Remote browsers can browse and copy commands only; one-click install needs the local (loopback) browser."
 		};
-		//#endregion
-		//#region src/client/telemetry.ts
-		const VISITOR_KEY = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX) && key !== DAY_KEY_PREFIX + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX + today) !== null) return;
-				const visitor = visitorId();
-				if (visitor === null) return;
-				pruneDayKeys(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
 		//#endregion
 		//#region src/client/index.ts
 		/**
@@ -2766,7 +2405,6 @@ window.__ModuleLoader__.load({
 		];
 		/** Register the market section and the plugin-manager bridge. */
 		function apply(ctx) {
-			reportDailyHeartbeat([{ name: "@linxin666/dsh-client-ui-market" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(MARKET_NS, {

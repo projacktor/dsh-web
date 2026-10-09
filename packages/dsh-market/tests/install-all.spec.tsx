@@ -64,11 +64,9 @@ vi.stubGlobal('fetch', vi.fn(async (input: unknown) => {
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
-/** Install log plus the counts the market answered with for the whole run. */
+/** Install log of one bulk run. */
 interface Run {
   installedIds: string[]
-  reportedIds: string[]
-  reportCalls: number
 }
 
 function mount(
@@ -79,7 +77,7 @@ function mount(
   options: { failFor?: string; gateway?: MarketCardProps['gateway']; reportCounts?: Record<string, number> } = {},
 ): Run {
   INSTALLED = installed
-  const run: Run = { installedIds: [], reportedIds: [], reportCalls: 0 }
+  const run: Run = { installedIds: [] }
   const gateway = options.gateway === undefined
     ? {
         install: async (_kind: string, id: string) => {
@@ -94,13 +92,7 @@ function mount(
     remote: REMOTE,
     gateway,
     pluginManager: null,
-    turnstileToken: async () => 'verified-token',
     marketOrigin: 'https://dsh-market.test',
-    reportInstallBatch: async (_kind: string, ids: string[]) => {
-      run.reportCalls += 1
-      run.reportedIds = ids
-      return options.reportCounts ?? Object.fromEntries(ids.map((id) => [id, 1]))
-    },
   })} />)
   return run
 }
@@ -117,7 +109,7 @@ describe('Workshop card: install all missing', () => {
     expect(run.installedIds).toEqual([])
   })
 
-  it('operator completing the confirmation installs every absent skin and reports one aggregated event', async () => {
+  it('operator completing the confirmation installs every absent skin', async () => {
     // Given no published skin is installed yet
     const run = mount([])
     // When the operator arms and then confirms the bulk install
@@ -125,16 +117,12 @@ describe('Workshop card: install all missing', () => {
     fireEvent.click(screen.getByRole('button', { name: '全部安装' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /将补装 2 款/ })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: /将补装 2 款/ }))
-    // Then both skins are on disk and the market saw a single aggregated event
+    // Then both skins are on disk
     await waitFor(() => expect(screen.getByText(/已安装 2 款皮肤/)).toBeTruthy())
     expect(run.installedIds).toEqual(['miku', 'whale-song'])
-    expect(run.reportCalls).toBe(1)
-    expect(run.reportedIds).toEqual(['miku', 'whale-song'])
-    // The summary rides the same line as the outcome, so one element holds both.
-    expect(screen.getByText(/已汇总上报 2 款安装记录/)).toBeTruthy()
   })
 
-  it('operator sees a partial failure reported without the asset that never landed', async () => {
+  it('operator sees a partial failure without the asset that never landed', async () => {
     // Given one skin's download cannot complete
     const run = mount([], { failFor: 'miku' })
     // When the operator runs the bulk install
@@ -142,9 +130,8 @@ describe('Workshop card: install all missing', () => {
     fireEvent.click(screen.getByRole('button', { name: '全部安装' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /将补装 2 款/ })).toBeTruthy())
     fireEvent.click(screen.getByRole('button', { name: /将补装 2 款/ }))
-    // Then the failure is on screen and only the landed asset is reported
+    // Then the failure is on screen
     await waitFor(() => expect(screen.getByText(/1 款皮肤安装失败/)).toBeTruthy())
-    expect(run.reportedIds).toEqual(['whale-song'])
   })
 
   it('operator with a complete catalog is told so and nothing is downloaded', async () => {

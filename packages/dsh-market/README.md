@@ -21,10 +21,10 @@ The in-GUI Workshop marketplace card for DeepSeek Harness (DSH) Web GUI and offi
 
 - Five tabs: a fixed 编辑推荐 (Editor's Picks) category leading the four catalog kinds. It pins a
   hand-curated skins / pets / community-plugins list, never presets, in the published order, with no
-  search box and no category chips; each entry keeps its own kind's install, like and preview
+  search box and no category chips; each entry keeps its own kind's install and preview
   affordances, and references this deployment cannot resolve are dropped.
 - Catalog tabs (skins / pets / plugins / presets) with the same ranking used by the Workshop site:
-  device-backed likes first (tie-broken by the manifest order), a search box, and per-card preview
+  Workshop like counts first (tie-broken by the manifest order), a search box, and per-card preview
   links (skins open the live try-on simulator).
 - One-click asset install (loopback browsers): skins download into `$DSH_HOME/skins/<id>/` and pets
   into `$DSH_HOME/pets/<id>/` — the DSH home directories that the Skin Center and the pet registry
@@ -46,9 +46,9 @@ The in-GUI Workshop marketplace card for DeepSeek Harness (DSH) Web GUI and offi
 - External links — the Workshop site, a card name, a repository, a skin preview — open in the
   official right-sidebar browser when the shell registers that tab type (alpha.2), and in a new
   browser tab otherwise.
-- Each card also shows an independent Workshop install count next to likes, plus a plugin npm
-  last-30-day download count (npm-backed plugins only); install counts record successful install
-  events, npm downloads use the public registry convention, and neither merges with likes.
+- Each card also shows a Workshop install count, plus a plugin npm last-30-day download count
+  (npm-backed plugins only); install counts come from the Workshop's aggregate stats, npm downloads
+  use the public registry convention.
 
 ## Install
 
@@ -75,7 +75,6 @@ card declares.
   copy-command fallbacks.
 - Asset installs require the Workshop site to be reachable; a manifest or download failure leaves the
   existing asset directory untouched.
-- Likes are per-device (the browser stores one anonymous fingerprint); they are not tied to any login.
 ## Architecture
 
 - The host half (`src/index.ts`) owns no settings registration: the card's enable switch is the plugin's

@@ -669,76 +669,6 @@ window.__ModuleLoader__.load({
 		/** English dictionary, checked complete against the zh key set. */
 		const en$13 = { "title": "Web Plugins" };
 		//#endregion
-		//#region ../dsh-web-settings/src/client/telemetry.ts
-		const VISITOR_KEY$8 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$8 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$8 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$8() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$8() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$8);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$8, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$8(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$8) && key !== DAY_KEY_PREFIX$8 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$8(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$8 + today) !== null) return;
-				const visitor = visitorId$8();
-				if (visitor === null) return;
-				pruneDayKeys$8(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$8();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$8, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$8 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-web-settings/src/client/index.ts
 		var client_exports$13 = /* @__PURE__ */ __exportAll({
 			apply: () => apply$14,
@@ -758,7 +688,6 @@ window.__ModuleLoader__.load({
 		* @param ctx - client root context.
 		*/
 		function apply$14(ctx) {
-			reportDailyHeartbeat$8([{ name: "@linxin666/dsh-client-ui-web-ui-settings" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register("web-ui-plugins", {
@@ -1758,76 +1687,6 @@ window.__ModuleLoader__.load({
 		/** The cordis service name the browser half provides the face under. */
 		const PLUGIN_MANAGER_SERVICE = "pluginManager";
 		//#endregion
-		//#region ../dsh-plugin-manager/src/client/telemetry.ts
-		const VISITOR_KEY$7 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$7 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$7 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$7() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$7() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$7);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$7, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$7(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$7) && key !== DAY_KEY_PREFIX$7 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$7(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$7 + today) !== null) return;
-				const visitor = visitorId$7();
-				if (visitor === null) return;
-				pruneDayKeys$7(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$7();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$7, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$7 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-plugin-manager/src/client/index.ts
 		var client_exports$12 = /* @__PURE__ */ __exportAll({
 			apply: () => apply$13,
@@ -2039,7 +1898,6 @@ window.__ModuleLoader__.load({
 		}
 		/** Contribute the check-for-updates patch and provide the shared face. */
 		function apply$13(ctx) {
-			reportDailyHeartbeat$7([{ name: "@linxin666/dsh-client-ui-plugin-manager" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$11, {
@@ -2084,80 +1942,6 @@ window.__ModuleLoader__.load({
 					return () => {};
 				}
 			});
-		}
-		//#endregion
-		//#region ../dsh-market/src/client/turnstile.ts
-		/** Turnstile token relay hosted on the market origin. */
-		const MARKET_ORIGIN$1 = "https://dsh-market.com";
-		const CHALLENGE_URL = "https://dsh-market.com/api/turnstile/challenge";
-		const TIMEOUT_MS = 1e4;
-		let ready = null;
-		let chain = Promise.resolve();
-		/** Create a UUID v4 even when randomUUID is unavailable on an HTTP LAN origin. */
-		function turnstileRequestId(source = crypto) {
-			if (typeof source.randomUUID === "function") return source.randomUUID();
-			const bytes = source.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
-			bytes[6] = bytes[6] & 15 | 64;
-			bytes[8] = bytes[8] & 63 | 128;
-			const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
-			return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-		}
-		function challengeFrame() {
-			if (ready !== null) return ready;
-			ready = new Promise((resolve, reject) => {
-				const iframe = document.createElement("iframe");
-				iframe.src = CHALLENGE_URL;
-				iframe.hidden = true;
-				iframe.title = "Market verification";
-				iframe.setAttribute("aria-hidden", "true");
-				iframe.onload = () => {
-					resolve(iframe);
-				};
-				iframe.onerror = () => {
-					iframe.remove();
-					ready = null;
-					reject(/* @__PURE__ */ new Error("turnstile-frame-failed"));
-				};
-				document.body.append(iframe);
-			});
-			return ready;
-		}
-		async function requestOne(action) {
-			const iframe = await challengeFrame();
-			const id = turnstileRequestId();
-			return new Promise((resolve, reject) => {
-				const timer = window.setTimeout(() => finish(/* @__PURE__ */ new Error("turnstile-timeout")), TIMEOUT_MS);
-				const onMessage = (event) => {
-					const data = event.data;
-					if (event.origin !== MARKET_ORIGIN$1 || event.source !== iframe.contentWindow) return;
-					if (data?.source !== "dsh-market-card" || data.type !== "token" || data.id !== id) return;
-					finish(null, typeof data.token === "string" ? data.token : "");
-				};
-				const finish = (error, token = "") => {
-					window.clearTimeout(timer);
-					window.removeEventListener("message", onMessage);
-					if (error !== null) {
-						iframe.remove();
-						ready = null;
-						reject(error);
-					} else resolve(token);
-				};
-				window.addEventListener("message", onMessage);
-				iframe.contentWindow?.postMessage({
-					source: "dsh-market-card",
-					type: "request",
-					id,
-					action
-				}, MARKET_ORIGIN$1);
-			});
-		}
-		/** Turnstile action for Workshop likes. */
-		const TURNSTILE_ACTION_LIKE = "market-like";
-		/** Serialize challenges because one invisible widget can execute only once at a time. */
-		function marketTurnstileToken(action = TURNSTILE_ACTION_LIKE) {
-			const request = chain.then(() => requestOne(action));
-			chain = request.then(() => void 0, () => void 0);
-			return request;
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-market/src/client/settings-card.module.css.mjs
@@ -3220,7 +3004,7 @@ window.__ModuleLoader__.load({
 		};
 		//#endregion
 		//#region \0dsh-css:packages/dsh-market/src/client/market.module.css.mjs
-		const css$17 = ".bkhjFa_market{flex-direction:column;gap:10px;display:flex}.bkhjFa_tabs{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);font-weight:600}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:active:enabled{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:active:enabled{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-label-primary)}.bkhjFa_tabCount{opacity:.72;margin-left:6px;font-size:12px}.bkhjFa_search{width:100%;max-width:460px;font:inherit;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:6px 10px;font-size:13px;line-height:1.5}.bkhjFa_search::placeholder{color:var(--dsw-alias-label-tertiary)}.bkhjFa_search:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.bkhjFa_grid{grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px;margin:4px 0 0;padding:0;list-style:none;display:grid}.bkhjFa_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:8px;gap:10px;min-width:0;padding:12px;display:flex}.bkhjFa_card:hover{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_thumb{object-fit:cover;background:var(--dsw-alias-bg-layer-2);border-radius:6px;flex:none;place-items:center;width:72px;height:72px;display:grid}.bkhjFa_cardBody{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.bkhjFa_cardName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-weight:600;overflow:hidden}.bkhjFa_cardVersion{color:var(--dsw-alias-label-tertiary);margin-left:6px;font-size:11px;font-weight:400}.bkhjFa_cardMeta{color:var(--dsw-alias-label-tertiary);white-space:nowrap;align-items:center;gap:6px;font-size:12px;line-height:1.4;display:flex;overflow:hidden}.bkhjFa_badge{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);white-space:nowrap;border-radius:999px;flex:none;padding:0 8px;font-size:11px;line-height:1.6}.bkhjFa_badgeInstalled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-bg-layer-2)}.bkhjFa_metrics{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;flex-wrap:wrap;gap:4px 10px;font-size:11px;line-height:1.5;display:flex}.bkhjFa_cardDesc{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:1.45;display:-webkit-box;overflow:hidden}.bkhjFa_cardFooter{flex-direction:column;gap:8px;margin-top:auto;padding-top:8px;display:flex}.bkhjFa_actionRow{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like,.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;align-items:center;padding:1px 10px;font-size:12px;line-height:1.5;text-decoration:none;display:inline-flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like{font-variant-numeric:tabular-nums}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_like:hover:enabled,.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_actionRowPrimary{align-items:stretch;gap:8px;display:flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install{min-width:0;font:inherit;color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:6px;flex:1 1 0;justify-content:center;align-items:center;min-height:30px;padding:4px 14px;font-size:12px;font-weight:600;line-height:1.5;display:inline-flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install:hover:enabled{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill);flex-grow:2}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:hover:enabled{background:var(--dsw-alias-button-primary-hover);border-color:var(--dsw-alias-button-primary-hover)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:disabled{opacity:.55;cursor:default}.bkhjFa_error{color:var(--dsw-alias-label-error,#c53030);margin:0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkRow{flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 0;display:flex}.bkhjFa_market .bkhjFa_bulkButton,.bkhjFa_market .bkhjFa_bulkArmed,.bkhjFa_market .bkhjFa_bulkCancel{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:6px;padding:3px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_bulkButton:hover:not(:disabled),.bkhjFa_market .bkhjFa_bulkCancel:hover:not(:disabled){border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-interactive-bg-hover)}.bkhjFa_market .bkhjFa_bulkButton:disabled,.bkhjFa_market .bkhjFa_bulkArmed:disabled{opacity:.55;cursor:default}.bkhjFa_market .bkhjFa_bulkArmed{border-color:var(--dsw-alias-state-danger-primary,#d93025);background:var(--dsw-alias-state-danger-primary,#d93025);color:#fff}.bkhjFa_market .bkhjFa_bulkNote,.bkhjFa_market .bkhjFa_bulkNoteWarn{margin:4px 0 0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkNote{color:var(--dsw-alias-state-success-primary)}.bkhjFa_market .bkhjFa_bulkNoteWarn{color:var(--dsw-alias-label-warning,#b06000)}.bkhjFa_callout{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px;line-height:1.4}.bkhjFa_filterRows{flex-direction:column;gap:6px;display:flex}.bkhjFa_filterRow{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipSub{color:var(--dsw-alias-label-tertiary);border-style:dashed;font-size:11px}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);border-style:solid;font-weight:600}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_filterCount{opacity:.72;margin-left:6px;font-size:11px}.bkhjFa_empty{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:13px;display:flex}.bkhjFa_retry{padding:3px 10px;font-size:12px}.bkhjFa_remoteNote{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px;line-height:1.4}.bkhjFa_modalActions{justify-content:flex-end;gap:8px;margin-top:10px;display:flex}";
+		const css$17 = ".bkhjFa_market{flex-direction:column;gap:10px;display:flex}.bkhjFa_tabs{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);font-weight:600}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab:active:enabled{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2)}.bkhjFa_market .bkhjFa_tabs>button.bkhjFa_tab.bkhjFa_tabActive:active:enabled{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-label-primary)}.bkhjFa_tabCount{opacity:.72;margin-left:6px;font-size:12px}.bkhjFa_search{width:100%;max-width:460px;font:inherit;color:var(--dsw-alias-label-primary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:6px;padding:6px 10px;font-size:13px;line-height:1.5}.bkhjFa_search::placeholder{color:var(--dsw-alias-label-tertiary)}.bkhjFa_search:focus{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}.bkhjFa_grid{grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:10px;margin:4px 0 0;padding:0;list-style:none;display:grid}.bkhjFa_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:8px;gap:10px;min-width:0;padding:12px;display:flex}.bkhjFa_card:hover{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_thumb{object-fit:cover;background:var(--dsw-alias-bg-layer-2);border-radius:6px;flex:none;place-items:center;width:72px;height:72px;display:grid}.bkhjFa_cardBody{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.bkhjFa_cardName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-weight:600;overflow:hidden}.bkhjFa_cardVersion{color:var(--dsw-alias-label-tertiary);margin-left:6px;font-size:11px;font-weight:400}.bkhjFa_cardMeta{color:var(--dsw-alias-label-tertiary);white-space:nowrap;align-items:center;gap:6px;font-size:12px;line-height:1.4;display:flex;overflow:hidden}.bkhjFa_badge{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);white-space:nowrap;border-radius:999px;flex:none;padding:0 8px;font-size:11px;line-height:1.6}.bkhjFa_badgeInstalled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed);background:var(--dsw-alias-bg-layer-2)}.bkhjFa_metrics{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;flex-wrap:wrap;gap:4px 10px;font-size:11px;line-height:1.5;display:flex}.bkhjFa_cardDesc{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:1.45;display:-webkit-box;overflow:hidden}.bkhjFa_cardFooter{flex-direction:column;gap:8px;margin-top:auto;padding-top:8px;display:flex}.bkhjFa_actionRow{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-module-platform);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;align-items:center;padding:1px 10px;font-size:12px;line-height:1.5;text-decoration:none;display:inline-flex}.bkhjFa_market .bkhjFa_actionRow>.bkhjFa_previewLink:hover{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_actionRowPrimary{align-items:stretch;gap:8px;display:flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install{min-width:0;font:inherit;color:var(--dsw-alias-label-primary);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;background:0 0;border-radius:6px;flex:1 1 0;justify-content:center;align-items:center;min-height:30px;padding:4px 14px;font-size:12px;font-weight:600;line-height:1.5;display:inline-flex}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_install:hover:enabled{border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary{color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill);border-color:var(--dsw-alias-button-primary-fill);flex-grow:2}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:hover:enabled{background:var(--dsw-alias-button-primary-hover);border-color:var(--dsw-alias-button-primary-hover)}.bkhjFa_market .bkhjFa_actionRowPrimary>.bkhjFa_installPrimary:disabled{opacity:.55;cursor:default}.bkhjFa_error{color:var(--dsw-alias-label-error,#c53030);margin:0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkRow{flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 0;display:flex}.bkhjFa_market .bkhjFa_bulkButton,.bkhjFa_market .bkhjFa_bulkArmed,.bkhjFa_market .bkhjFa_bulkCancel{font:inherit;border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);cursor:pointer;background:0 0;border-radius:6px;padding:3px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_bulkButton:hover:not(:disabled),.bkhjFa_market .bkhjFa_bulkCancel:hover:not(:disabled){border-color:var(--dsw-alias-border-l3);background:var(--dsw-alias-interactive-bg-hover)}.bkhjFa_market .bkhjFa_bulkButton:disabled,.bkhjFa_market .bkhjFa_bulkArmed:disabled{opacity:.55;cursor:default}.bkhjFa_market .bkhjFa_bulkArmed{border-color:var(--dsw-alias-state-danger-primary,#d93025);background:var(--dsw-alias-state-danger-primary,#d93025);color:#fff}.bkhjFa_market .bkhjFa_bulkNote,.bkhjFa_market .bkhjFa_bulkNoteWarn{margin:4px 0 0;font-size:12px;line-height:1.4}.bkhjFa_market .bkhjFa_bulkNote{color:var(--dsw-alias-state-success-primary)}.bkhjFa_market .bkhjFa_bulkNoteWarn{color:var(--dsw-alias-label-warning,#b06000)}.bkhjFa_callout{color:var(--dsw-alias-state-success-primary);margin:0;font-size:12px;line-height:1.4}.bkhjFa_filterRows{flex-direction:column;gap:6px;display:flex}.bkhjFa_filterRow{flex-wrap:wrap;gap:6px;display:flex}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip{font:inherit;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);cursor:pointer;white-space:nowrap;border-radius:999px;padding:2px 10px;font-size:12px;line-height:1.6}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip:hover:enabled{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-dimmed)}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipSub{color:var(--dsw-alias-label-tertiary);border-style:dashed;font-size:11px}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn{color:var(--dsw-alias-bg-layer-3);background:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-label-primary);border-style:solid;font-weight:600}.bkhjFa_market .bkhjFa_filterRow>button.bkhjFa_filterChip.bkhjFa_filterChipOn:hover:enabled{color:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-label-primary)}.bkhjFa_filterCount{opacity:.72;margin-left:6px;font-size:11px}.bkhjFa_empty{color:var(--dsw-alias-label-tertiary);align-items:center;gap:8px;font-size:13px;display:flex}.bkhjFa_retry{padding:3px 10px;font-size:12px}.bkhjFa_remoteNote{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px;line-height:1.4}.bkhjFa_modalActions{justify-content:flex-end;gap:8px;margin-top:10px;display:flex}";
 		const tagId$17 = "@linxin666/dsh-web-all/packages/dsh-market/src/client/market.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$17) + "]") === null) {
 			const tag = document.createElement("style");
@@ -3259,7 +3043,6 @@ window.__ModuleLoader__.load({
 			"grid": "bkhjFa_grid",
 			"install": "bkhjFa_install",
 			"installPrimary": "bkhjFa_installPrimary",
-			"like": "bkhjFa_like",
 			"market": "bkhjFa_market",
 			"metrics": "bkhjFa_metrics",
 			"modalActions": "bkhjFa_modalActions",
@@ -3277,13 +3060,13 @@ window.__ModuleLoader__.load({
 		//#region ../dsh-market/src/client/MarketCard.tsx
 		/**
 		* The market card: a first-level settings section that browses
-		* dsh-market.com (skins / pets / community plugins), ranks entries by
-		* device-backed likes, and offers one-click install — assets land in the
-		* DSH home directories through the host gateway, while plugins go through the
-		* official in-process plugin manager's remote face when the host publishes it
-		* (the same call the official Plugins page makes), fall back to the family
-		* pluginManager service otherwise, and hand management of an installed plugin
-		* over to the official Plugins page instead of re-implementing it.
+		* dsh-market.com (skins / pets / community plugins) and offers one-click
+		* install — assets land in the DSH home directories through the host gateway,
+		* while plugins go through the official in-process plugin manager's remote
+		* face when the host publishes it (the same call the official Plugins page
+		* makes), fall back to the family pluginManager service otherwise, and hand
+		* management of an installed plugin over to the official Plugins page instead
+		* of re-implementing it.
 		*/
 		const MARKET_ORIGIN = "https://dsh-market.com";
 		/** Bridges the market config form onto the card's staged form. */
@@ -3335,20 +3118,6 @@ window.__ModuleLoader__.load({
 			picks: "tab.picks",
 			...KIND_LABEL
 		};
-		function deviceFp() {
-			const key = "dsh-market-web-fp";
-			let fp = "";
-			try {
-				fp = window.localStorage.getItem(key) || "";
-			} catch {}
-			if (!fp || !/^[A-Za-z0-9_-]{16,64}$/.test(fp)) {
-				fp = window.crypto.randomUUID ? window.crypto.randomUUID() : "fp-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				try {
-					window.localStorage.setItem(key, fp);
-				} catch {}
-			}
-			return fp;
-		}
 		function messageOf$4(reason) {
 			return reason instanceof Error ? reason.message : String(reason);
 		}
@@ -3403,7 +3172,6 @@ window.__ModuleLoader__.load({
 			const [pluginList, setPluginList] = (0, react.useState)(null);
 			const [pluginErrors, setPluginErrors] = (0, react.useState)({});
 			const [npmDownloads, setNpmDownloads] = (0, react.useState)({});
-			const likeSeq = (0, react.useRef)(/* @__PURE__ */ new Map());
 			const [installAllArmed, setInstallAllArmed] = (0, react.useState)(false);
 			const [installAll, setInstallAll] = (0, react.useState)(null);
 			(0, react.useEffect)(() => {
@@ -3644,26 +3412,6 @@ window.__ModuleLoader__.load({
 					callout(id, t("installedAt", { path: result.dest }));
 					const list = await gateway.list();
 					setInstalled(list);
-					reportInstall(kind, id).then((count) => {
-						setData((prev) => prev ? {
-							...prev,
-							stats: {
-								...prev.stats,
-								installs: {
-									...prev.stats.installs ?? {
-										skin: {},
-										pet: {},
-										plugin: {},
-										preset: {}
-									},
-									[kind]: {
-										...prev.stats.installs?.[kind] ?? {},
-										[id]: count
-									}
-								}
-							}
-						} : prev);
-					}).catch(() => {});
 					if (kind === "skin") try {
 						await fetch("api/skin-center/v2/active", {
 							method: "POST",
@@ -3684,15 +3432,11 @@ window.__ModuleLoader__.load({
 				}
 			};
 			/**
-			* Install every published skin this machine does not have yet, then report
-			* the whole run to the market as ONE event.
+			* Install every published skin this machine does not have yet.
 			*
 			* The downloads go through the same loopback gateway one at a time, so each
 			* asset keeps its own progress, its own failure and its own integrity
-			* write. Only the reporting is aggregated: a bulk install is one user
-			* gesture, so it costs one Turnstile challenge and one request rather than
-			* one per asset, and the per-asset counters it produces are the same rows a
-			* run of single installs would have written.
+			* write.
 			*/
 			/** Published skins this machine does not have yet, in catalog order. */
 			const missingInstallCount = () => {
@@ -3707,7 +3451,6 @@ window.__ModuleLoader__.load({
 					done: 0,
 					total: 0,
 					failed: 0,
-					reported: 0,
 					note: ""
 				});
 				const published = (data?.items.skin ?? []).map((item) => item.id);
@@ -3719,7 +3462,6 @@ window.__ModuleLoader__.load({
 						done: 0,
 						total: 0,
 						failed: 0,
-						reported: 0,
 						note: t("installAllNone", {})
 					});
 					return;
@@ -3730,7 +3472,6 @@ window.__ModuleLoader__.load({
 						done: 0,
 						total: 0,
 						failed: 0,
-						reported: 0,
 						note: ""
 					});
 					setInstallAllArmed(true);
@@ -3738,19 +3479,16 @@ window.__ModuleLoader__.load({
 				}
 				let done = 0;
 				let failed = 0;
-				const landed = [];
 				for (const id of missing) {
 					setInstallAll({
 						phase: "running",
 						done,
 						total: missing.length,
 						failed,
-						reported: 0,
 						note: ""
 					});
 					try {
 						await gateway.install("skin", id, false);
-						landed.push(id);
 					} catch {
 						failed++;
 					}
@@ -3759,35 +3497,11 @@ window.__ModuleLoader__.load({
 				try {
 					setInstalled(await gateway.list());
 				} catch {}
-				let reported = 0;
-				if (landed.length > 0) try {
-					const counts = await reportInstallBatch("skin", landed);
-					reported = Object.keys(counts).length;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							installs: {
-								...prev.stats.installs ?? {
-									skin: {},
-									pet: {},
-									plugin: {},
-									preset: {}
-								},
-								skin: {
-									...prev.stats.installs?.skin ?? {},
-									...counts
-								}
-							}
-						}
-					} : prev);
-				} catch {}
 				setInstallAll({
 					phase: "idle",
 					done,
 					total: missing.length,
 					failed,
-					reported,
 					note: failed === 0 ? t("installAllDone", { count: done }) : t("installAllFailed", { count: failed })
 				});
 			};
@@ -3812,26 +3526,6 @@ window.__ModuleLoader__.load({
 				(manager != null ? installViaOfficialManager(manager, spec, requestId) : face.install(spec)).then(() => face.list()).then((list) => {
 					setPluginList(list);
 					callout(id, t("installed", {}));
-					reportInstall("plugin", id).then((count) => {
-						setData((prev) => prev ? {
-							...prev,
-							stats: {
-								...prev.stats,
-								installs: {
-									...prev.stats.installs ?? {
-										skin: {},
-										pet: {},
-										plugin: {},
-										preset: {}
-									},
-									plugin: {
-										...prev.stats.installs?.plugin ?? {},
-										[id]: count
-									}
-								}
-							}
-						} : prev);
-					}).catch(() => {});
 				}).catch((reason) => {
 					setPluginErrors((prev) => ({
 						...prev,
@@ -3843,109 +3537,6 @@ window.__ModuleLoader__.load({
 				if (pluginNavigation == null) return;
 				pluginNavigation.openBundle(managePackageName(item, pluginList ?? []));
 			};
-			const onLike = async (kind, id) => {
-				const key = kind + ":" + id;
-				const seq = (likeSeq.current.get(key) ?? 0) + 1;
-				likeSeq.current.set(key, seq);
-				const current = votesOf(kind, id);
-				setData((prev) => prev ? {
-					...prev,
-					stats: {
-						...prev.stats,
-						[kind]: {
-							...prev.stats[kind],
-							[id]: current + 1
-						}
-					}
-				} : prev);
-				try {
-					const token = await (props.turnstileToken ?? marketTurnstileToken)();
-					const res = await fetch("https://dsh-market.com/api/like", {
-						method: "POST",
-						headers: { "content-type": "application/json" },
-						body: JSON.stringify({
-							kind,
-							asset_id: id,
-							device_fp: deviceFp(),
-							turnstile_token: token
-						})
-					});
-					if (!res.ok) throw new Error("HTTP " + res.status);
-					const out = await res.json();
-					if (likeSeq.current.get(key) !== seq) return;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							[kind]: {
-								...prev.stats[kind],
-								[id]: out.votes ?? current + 1
-							}
-						}
-					} : prev);
-				} catch {
-					if (likeSeq.current.get(key) !== seq) return;
-					setData((prev) => prev ? {
-						...prev,
-						stats: {
-							...prev.stats,
-							[kind]: {
-								...prev.stats[kind],
-								[id]: current
-							}
-						}
-					} : prev);
-					setCallouts((prev) => ({
-						...prev,
-						[id]: t("likeFailed", {})
-					}));
-				}
-			};
-			const origin = props.marketOrigin ?? MARKET_ORIGIN;
-			const reportInstall = props.reportInstall ?? (async (kind, id) => {
-				const token = await (props.turnstileToken ?? (() => marketTurnstileToken("market-install")))();
-				const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : "ins-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				const res = await fetch(origin + "/api/install", {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({
-						kind,
-						asset_id: id,
-						device_fp: deviceFp(),
-						install_id: installId,
-						turnstile_token: token
-					})
-				});
-				if (!res.ok) throw new Error("HTTP " + res.status);
-				return (await res.json()).installs ?? 0;
-			});
-			/**
-			* Report a whole bulk install as ONE request.
-			*
-			* A bulk install is one user gesture, so it must not spend one Turnstile
-			* challenge and one round trip per asset. The edge endpoint writes exactly
-			* the same per-asset rows and per-asset counts a run of single installs
-			* would - it only folds them into one D1 batch - so the public counters are
-			* indistinguishable from installing one at a time.
-			*/
-			const reportInstallBatch = props.reportInstallBatch ?? (async (kind, ids) => {
-				if (ids.length === 0) return {};
-				const token = await (props.turnstileToken ?? (() => marketTurnstileToken("market-install")))();
-				const installId = window.crypto.randomUUID ? window.crypto.randomUUID() : "ins-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
-				const res = await fetch(origin + "/api/install-batch", {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({
-						kind,
-						asset_ids: ids,
-						device_fp: deviceFp(),
-						install_id: installId,
-						turnstile_token: token
-					})
-				});
-				if (!res.ok) throw new Error("HTTP " + res.status);
-				return (await res.json()).installs ?? {};
-			});
 			const chipClass = (isOn, isSub) => {
 				const cls = [market_module_css_default.filterChip];
 				if (isSub) cls.push(market_module_css_default.filterChipSub);
@@ -4068,9 +3659,9 @@ window.__ModuleLoader__.load({
 									children: t("cancel", {})
 								}) : null]
 							}) : null,
-							installAll !== null && installAll.note !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+							installAll !== null && installAll.note !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 								className: installAll.failed > 0 ? market_module_css_default.bulkNoteWarn : market_module_css_default.bulkNote,
-								children: [installAll.note, installAll.reported > 0 ? " · " + t("installAllSummary", { count: installAll.reported }) : ""]
+								children: installAll.note
 							}) : null,
 							tab === "preset" || tab === "picks" ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
 								className: market_module_css_default.search,
@@ -4159,8 +3750,7 @@ window.__ModuleLoader__.load({
 								catalogState: failed ? "error" : loading ? "loading" : "ready",
 								gateway: gateway !== null,
 								installs: data?.stats.installs?.preset ?? {},
-								install: gateway === null ? void 0 : (id, force) => gateway.install("preset", id, force),
-								reportInstall: (id) => reportInstall("preset", id)
+								install: gateway === null ? void 0 : (id, force) => gateway.install("preset", id, force)
 							}, {
 								entryKey: "preset",
 								fallback: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
@@ -4257,39 +3847,24 @@ window.__ModuleLoader__.load({
 													className: market_module_css_default.cardFooter,
 													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 														className: market_module_css_default.actionRow,
-														children: [
-															/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-																type: "button",
-																className: market_module_css_default.like,
-																onClick: () => {
-																	onLike(kind, id);
-																},
-																children: [
-																	t("like"),
-																	" ",
-																	votesOf(kind, id)
-																]
-															}),
-															/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-																type: "button",
-																className: market_module_css_default.previewLink,
-																onClick: () => {
-																	props.openExternal(kind === "skin" ? "https://dsh-market.com/preview.html?skin=" + encodeURIComponent(id) + "&theme=light&chrome=0" : "https://dsh-market.com/");
-																},
-																children: t("preview")
-															}),
-															(kind === "plugin" || kind === "skin") && item.repo ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
-																className: market_module_css_default.previewLink,
-																href: item.repo,
-																target: "_blank",
-																rel: "noreferrer",
-																onClick: (event) => {
-																	event.preventDefault();
-																	props.openExternal(item.repo ?? MARKET_ORIGIN);
-																},
-																children: t("repository")
-															}) : null
-														]
+														children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+															type: "button",
+															className: market_module_css_default.previewLink,
+															onClick: () => {
+																props.openExternal(kind === "skin" ? "https://dsh-market.com/preview.html?skin=" + encodeURIComponent(id) + "&theme=light&chrome=0" : "https://dsh-market.com/");
+															},
+															children: t("preview")
+														}), (kind === "plugin" || kind === "skin") && item.repo ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("a", {
+															className: market_module_css_default.previewLink,
+															href: item.repo,
+															target: "_blank",
+															rel: "noreferrer",
+															onClick: (event) => {
+																event.preventDefault();
+																props.openExternal(item.repo ?? MARKET_ORIGIN);
+															},
+															children: t("repository")
+														}) : null]
 													}), kind === "plugin" || gateway !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 														className: market_module_css_default.actionRowPrimary,
 														children: [
@@ -4604,7 +4179,6 @@ window.__ModuleLoader__.load({
 			"installAllDone": "已安装 {count} 款皮肤",
 			"installAllNone": "所有皮肤均已安装",
 			"installAllFailed": "{count} 款皮肤安装失败",
-			"installAllSummary": "已汇总上报 {count} 款安装记录",
 			"installed": "已安装",
 			"manageInPluginPage": "在插件页管理",
 			"installFailed": "安装失败：{reason}",
@@ -4619,9 +4193,6 @@ window.__ModuleLoader__.load({
 			"preview": "预览",
 			"openSite": "打开创意工坊站",
 			"repository": "源码仓库",
-			"like": "赞",
-			"liked": "已赞",
-			"likeFailed": "点赞失败",
 			"badge.market": "dsh-market.com",
 			"install.path": "安装目录：{path}",
 			"installedAt": "安装到 {path}",
@@ -4712,7 +4283,6 @@ window.__ModuleLoader__.load({
 			"installAllDone": "Installed {count} skin(s)",
 			"installAllNone": "Every skin is already installed",
 			"installAllFailed": "{count} skin(s) failed to install",
-			"installAllSummary": "Reported {count} install(s) as one batch",
 			"installed": "Installed",
 			"manageInPluginPage": "Manage in Plugins",
 			"installFailed": "Install failed: {reason}",
@@ -4727,9 +4297,6 @@ window.__ModuleLoader__.load({
 			"preview": "Preview",
 			"openSite": "Open the Workshop site",
 			"repository": "Source repository",
-			"like": "Like",
-			"liked": "Liked",
-			"likeFailed": "Like failed",
 			"badge.market": "dsh-market.com",
 			"install.path": "Install directory: {path}",
 			"installedAt": "Installed to {path}",
@@ -4739,76 +4306,6 @@ window.__ModuleLoader__.load({
 			"npmDownloads": "npm {count} last 30d",
 			"remote.note": "Remote browsers can browse and copy commands only; one-click install needs the local (loopback) browser."
 		};
-		//#endregion
-		//#region ../dsh-market/src/client/telemetry.ts
-		const VISITOR_KEY$6 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$6 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$6 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$6() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$6() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$6);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$6, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$6(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$6) && key !== DAY_KEY_PREFIX$6 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$6(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$6 + today) !== null) return;
-				const visitor = visitorId$6();
-				if (visitor === null) return;
-				pruneDayKeys$6(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$6();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$6, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$6 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
 		//#endregion
 		//#region ../dsh-market/src/client/index.ts
 		var client_exports$11 = /* @__PURE__ */ __exportAll({
@@ -4836,7 +4333,6 @@ window.__ModuleLoader__.load({
 		];
 		/** Register the market section and the plugin-manager bridge. */
 		function apply$12(ctx) {
-			reportDailyHeartbeat$6([{ name: "@linxin666/dsh-client-ui-market" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(MARKET_NS, {
@@ -16170,76 +15666,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			}
 		};
 		//#endregion
-		//#region ../dsh-task-board/src/client/telemetry.ts
-		const VISITOR_KEY$5 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$5 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$5 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$5() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$5() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$5);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$5, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$5(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$5) && key !== DAY_KEY_PREFIX$5 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$5(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$5 + today) !== null) return;
-				const visitor = visitorId$5();
-				if (visitor === null) return;
-				pruneDayKeys$5(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$5();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$5, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$5 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-task-board/src/client/plugin-card-seat.ts
 		/**
 		* Family plugin-card seat.
@@ -16625,7 +16051,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		* @param ctx - client root context (services: sessions, workspaces).
 		*/
 		function apply$11(ctx) {
-			reportDailyHeartbeat$5([{ name: "@linxin666/dsh-client-ui-task-board" }]);
 			if (!claimTaskboardApply()) return;
 			ctx.effect(() => releaseTaskboardApply, "task-board: apply claim");
 			ctx.effect(() => {
@@ -21794,76 +21219,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"error.baseRefNotFound": "The base branch or revision does not exist."
 		};
 		//#endregion
-		//#region ../dsh-git-graph/src/client/telemetry.ts
-		const VISITOR_KEY$4 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$4 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$4 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$4() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$4() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$4);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$4, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$4(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$4) && key !== DAY_KEY_PREFIX$4 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$4(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$4 + today) !== null) return;
-				const visitor = visitorId$4();
-				if (visitor === null) return;
-				pruneDayKeys$4(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$4();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$4, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$4 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-git-graph/src/client/index.ts
 		var client_exports$8 = /* @__PURE__ */ __exportAll({
 			BranchChip: () => BranchChip,
@@ -21899,7 +21254,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		* @param ctx - client root context.
 		*/
 		function apply$9(ctx) {
-			reportDailyHeartbeat$4([{ name: "@linxin666/dsh-client-ui-git-graph" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$8, {
@@ -23464,7 +22818,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		}
 		//#endregion
 		//#region \0dsh-css:packages/dsh-remote-web-ui/src/client/remote.module.css.mjs
-		const css$9 = ".fThDlq_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.fThDlq_mask{background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute;inset:0}.fThDlq_trigger{width:36px;height:36px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex;position:relative}.fThDlq_trigger[data-wide=wide]{border-radius:999px;flex:auto;justify-content:flex-start;gap:8px;width:auto;min-width:0;padding:0 10px}.fThDlq_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_trigger:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_trigger:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_trigger:disabled{opacity:.5;cursor:default}.fThDlq_panel{z-index:1;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);width:560px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:24px;flex-direction:column;gap:14px;padding:24px;font-size:14px;line-height:22px;display:flex;position:relative;overflow:auto}.fThDlq_header{align-items:flex-start;gap:12px;display:flex}.fThDlq_heading{flex:1;min-width:0}.fThDlq_title{margin:0;font-size:18px;font-weight:600;line-height:26px}.fThDlq_subtitle{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:13px}.fThDlq_close{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex}.fThDlq_close:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_close:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_close:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_close:disabled{opacity:.5;cursor:default}.fThDlq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;align-items:center;gap:12px;padding:16px;display:flex}.fThDlq_cardHeader{justify-content:space-between;align-items:center;gap:12px;width:100%;display:flex}.fThDlq_cardTitle{font-weight:500}.fThDlq_badge{white-space:nowrap;border-radius:999px;flex:none;align-items:center;gap:6px;min-width:0;padding:2px 10px;font-size:12px;line-height:18px;display:inline-flex}.fThDlq_badge:before{content:\"\";background:currentColor;border-radius:50%;width:8px;height:8px}.fThDlq_badge-waiting{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-connected{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-disconnected{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-stopped{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badgePublic{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badges{flex:none;align-items:center;gap:6px;display:inline-flex}.fThDlq_qrWrap{background:var(--dsw-alias-bg-base);border-radius:12px;justify-content:center;align-items:center;padding:12px;display:flex}.fThDlq_qr{display:block}.fThDlq_expired{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_expiry{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.fThDlq_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_link{text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-caption);font-family:var(--dsw-font-mono,ui-monospace, monospace);margin:0;font-size:12px;display:block;overflow:hidden}.fThDlq_pairLinks{flex-direction:column;gap:8px;display:flex}.fThDlq_pairLinkRow{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:10px;align-items:center;gap:10px;min-width:0;padding:10px 12px;display:flex}.fThDlq_pairLinkText{flex:1;min-width:0}.fThDlq_pairLinkLabel{color:var(--dsw-alias-label-secondary);margin-bottom:3px;font-size:12px;display:block}.fThDlq_copyLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);min-height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;flex:none;align-items:center;gap:5px;padding:0 10px;display:inline-flex}.fThDlq_oneTimeHint{color:var(--dsw-alias-label-caption);margin:0;font-size:12px}.fThDlq_stoppedHint{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_tunnelNote{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_tunnelFailed{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_actions{gap:8px;display:flex}.fThDlq_action{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);height:34px;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;border-radius:10px;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:13px;transition:background-color .12s,border-color .12s,box-shadow .12s;display:inline-flex}.fThDlq_action:hover:not(:disabled){background:var(--dsw-alias-button-floating-hover)}.fThDlq_action:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_action:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_action:disabled{opacity:.5;cursor:default}.fThDlq_banner{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;padding:16px}.fThDlq_bannerTitle{color:var(--dsw-alias-state-warn-primary);margin:0;font-weight:500}.fThDlq_bannerHint{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.fThDlq_fencePage{z-index:2000;box-sizing:border-box;background:var(--dsw-alias-bg-base);text-align:center;flex-direction:column;justify-content:center;align-items:center;padding:40px 24px;display:flex;position:fixed;inset:0;overflow:auto}.fThDlq_fenceCard{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:min(520px,100%);box-shadow:var(--dsw-shadow-lv3);text-align:center;border-radius:20px;margin-inline:auto;padding:36px 40px}.fThDlq_fenceMark{background:var(--dsw-alias-state-error-secondary);width:44px;height:44px;color:var(--dsw-alias-state-error-primary);border-radius:50%;place-items:center;margin-inline:auto;font-size:24px;line-height:1;display:grid}.fThDlq_fenceEyebrow{color:var(--dsw-alias-state-error-primary);margin:22px 0 8px;font-size:13px;font-weight:600}.fThDlq_fenceTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:24px;line-height:1.35}.fThDlq_fenceDetail{color:var(--dsw-alias-label-secondary);margin:12px 0 0;font-size:14px;line-height:1.65}.fThDlq_fenceSteps{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);text-align:left;border-radius:12px;margin:24px auto 0;padding:20px 20px 20px 42px;font-size:14px;line-height:1.65}.fThDlq_fenceSteps li+li{margin-top:8px}.fThDlq_fenceForm{width:100%;margin-top:20px}.fThDlq_fenceInputRow{gap:8px;width:100%;display:flex}.fThDlq_fenceInput{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);min-width:0;color:var(--dsw-alias-label-primary);font:inherit;border-radius:10px;flex:1;padding:10px 14px;font-size:13px;transition:border-color .12s,box-shadow .12s}.fThDlq_fenceInput:focus{border-color:var(--dsw-alias-brand-primary);outline:none;box-shadow:0 0 0 2px #0066ff26}.fThDlq_fencePairButton{border:1px solid var(--dsw-alias-button-primary-fill);background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);font:inherit;cursor:pointer;border-radius:10px;flex-shrink:0;padding:10px 18px;font-size:13px;font-weight:500;transition:filter .12s,opacity .12s}.fThDlq_fencePairButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill));border-color:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill))}.fThDlq_fencePairButton:disabled{opacity:.55;cursor:not-allowed}.fThDlq_fencePairButton:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.fThDlq_fenceError{color:var(--dsw-alias-state-error-primary);text-align:left;margin:10px 0 0;font-size:13px;line-height:1.4}.fThDlq_fenceRetry{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;background:0 0;border-radius:10px;margin-top:12px;padding:10px 16px;font-weight:500;transition:background-color .12s,color .12s}.fThDlq_fenceRetry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_fenceRetry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:3px}.fThDlq_fenceFootnote{color:var(--dsw-alias-label-tertiary);margin:14px 0 0;font-size:12px;line-height:1.55}.fThDlq_addresses{border:none;margin:12px 0 0;padding:0}.fThDlq_addresses legend{color:var(--dsw-alias-label-secondary);padding:0;font-size:13px}.fThDlq_address{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;cursor:pointer;border-radius:6px;align-items:center;gap:8px;margin-top:6px;padding:4px 6px;font-size:13px;transition:background-color .12s;display:flex}.fThDlq_address:hover{background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_address input:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);border-radius:50%;outline:none}.fThDlq_addressValue{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-size:12px;overflow:hidden}.fThDlq_addressHint{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px}.fThDlq_devices{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;gap:8px;padding:12px 16px 14px;display:flex}.fThDlq_devicesTitle{margin:0;font-size:13px;font-weight:500;line-height:20px}.fThDlq_devicesEmpty{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_deviceList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}.fThDlq_deviceRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.fThDlq_deviceMeta{flex-direction:column;gap:2px;min-width:0;display:flex}.fThDlq_deviceName{text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;overflow:hidden}.fThDlq_devicePresence{font-size:12px;line-height:18px}.fThDlq_deviceOnline{color:var(--dsw-alias-state-success-primary)}.fThDlq_deviceOffline{color:var(--dsw-alias-label-secondary)}.fThDlq_deviceSeen{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;font-size:12px}.fThDlq_deviceRevoke{color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;flex:none;padding:6px 10px;font-size:12px;transition:background-color .12s,color .12s}.fThDlq_deviceRevoke:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_deviceRevoke:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}@media (prefers-reduced-motion:reduce){.fThDlq_trigger,.fThDlq_close,.fThDlq_action,.fThDlq_address,.fThDlq_deviceRevoke{transition:none}}.fThDlq_entryRow{flex:none;align-items:center;gap:6px;min-width:0;display:flex}.fThDlq_entryRow[data-rail=rail]{flex-direction:column-reverse;gap:4px}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]{flex-flow:wrap;align-items:center}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]>:not([class*=settingsArea]):not([class*=footerActions]){flex:100%;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]>[class*=footerActions]{display:contents}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>:not([data-dsh-part=entry]):not([class*=entryRow]){flex:100%;order:1;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>[data-dsh-part=entry],[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>[class*=entryRow]{flex:none;order:4;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=settingsArea]{flex:auto;order:3;width:auto;min-width:0}[data-dsh-frame][data-sidebar-collapsed] [class*=footerActions]:has([data-rail=rail]){flex-direction:column;align-items:center;gap:4px}";
+		const css$9 = ".fThDlq_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.fThDlq_mask{background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute;inset:0}.fThDlq_trigger{width:36px;height:36px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex;position:relative}.fThDlq_trigger[data-wide=wide]{border-radius:999px;flex:auto;justify-content:flex-start;gap:8px;width:auto;min-width:0;padding:0 10px}.fThDlq_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_trigger:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_trigger:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_trigger:disabled{opacity:.5;cursor:default}.fThDlq_panel{z-index:1;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);width:560px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);box-shadow:var(--dsw-shadow-lv3);color:var(--dsw-alias-label-primary);border-radius:24px;flex-direction:column;gap:14px;padding:24px;font-size:14px;line-height:22px;display:flex;position:relative;overflow:auto}.fThDlq_header{align-items:flex-start;gap:12px;display:flex}.fThDlq_heading{flex:1;min-width:0}.fThDlq_title{margin:0;font-size:18px;font-weight:600;line-height:26px}.fThDlq_subtitle{color:var(--dsw-alias-label-secondary);margin:4px 0 0;font-size:13px}.fThDlq_close{width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:50%;flex:none;justify-content:center;align-items:center;padding:0;transition:background-color .12s,color .12s,box-shadow .12s;display:inline-flex}.fThDlq_close:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_close:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_close:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_close:disabled{opacity:.5;cursor:default}.fThDlq_card{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;align-items:center;gap:12px;padding:16px;display:flex}.fThDlq_cardHeader{justify-content:space-between;align-items:center;gap:12px;width:100%;display:flex}.fThDlq_cardTitle{font-weight:500}.fThDlq_badge{white-space:nowrap;border-radius:999px;flex:none;align-items:center;gap:6px;min-width:0;padding:2px 10px;font-size:12px;line-height:18px;display:inline-flex}.fThDlq_badge:before{content:\"\";background:currentColor;border-radius:50%;width:8px;height:8px}.fThDlq_badge-waiting{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-connected{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-disconnected{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badge-stopped{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badgePublic{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_badges{flex:none;align-items:center;gap:6px;display:inline-flex}.fThDlq_qrWrap{background:var(--dsw-alias-bg-base);border-radius:12px;justify-content:center;align-items:center;padding:12px;display:flex}.fThDlq_qr{display:block}.fThDlq_expired{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_expiry{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px}.fThDlq_hint{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_link{text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-caption);font-family:var(--dsw-font-mono,ui-monospace, monospace);margin:0;font-size:12px;display:block;overflow:hidden}.fThDlq_pairLinks{flex-direction:column;gap:8px;display:flex}.fThDlq_pairLinkRow{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:10px;align-items:center;gap:10px;min-width:0;padding:10px 12px;display:flex}.fThDlq_pairLinkText{flex:1;min-width:0}.fThDlq_pairLinkLabel{color:var(--dsw-alias-label-secondary);margin-bottom:3px;font-size:12px;display:block}.fThDlq_copyLink{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);min-height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;border-radius:8px;flex:none;align-items:center;gap:5px;padding:0 10px;display:inline-flex}.fThDlq_oneTimeHint{color:var(--dsw-alias-label-caption);margin:0;font-size:12px}.fThDlq_stoppedHint{color:var(--dsw-alias-state-error-primary);margin:0;font-size:13px}.fThDlq_actions{gap:8px;display:flex}.fThDlq_action{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-button-elevated-fill);height:34px;color:var(--dsw-alias-label-primary);cursor:pointer;white-space:nowrap;border-radius:10px;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:13px;transition:background-color .12s,border-color .12s,box-shadow .12s;display:inline-flex}.fThDlq_action:hover:not(:disabled){background:var(--dsw-alias-button-floating-hover)}.fThDlq_action:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}.fThDlq_action:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}.fThDlq_action:disabled{opacity:.5;cursor:default}.fThDlq_banner{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;padding:16px}.fThDlq_bannerTitle{color:var(--dsw-alias-state-warn-primary);margin:0;font-weight:500}.fThDlq_bannerHint{color:var(--dsw-alias-label-secondary);margin:6px 0 0;font-size:13px}.fThDlq_fencePage{z-index:2000;box-sizing:border-box;background:var(--dsw-alias-bg-base);text-align:center;flex-direction:column;justify-content:center;align-items:center;padding:40px 24px;display:flex;position:fixed;inset:0;overflow:auto}.fThDlq_fenceCard{box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);width:min(520px,100%);box-shadow:var(--dsw-shadow-lv3);text-align:center;border-radius:20px;margin-inline:auto;padding:36px 40px}.fThDlq_fenceMark{background:var(--dsw-alias-state-error-secondary);width:44px;height:44px;color:var(--dsw-alias-state-error-primary);border-radius:50%;place-items:center;margin-inline:auto;font-size:24px;line-height:1;display:grid}.fThDlq_fenceEyebrow{color:var(--dsw-alias-state-error-primary);margin:22px 0 8px;font-size:13px;font-weight:600}.fThDlq_fenceTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:24px;line-height:1.35}.fThDlq_fenceDetail{color:var(--dsw-alias-label-secondary);margin:12px 0 0;font-size:14px;line-height:1.65}.fThDlq_fenceSteps{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);text-align:left;border-radius:12px;margin:24px auto 0;padding:20px 20px 20px 42px;font-size:14px;line-height:1.65}.fThDlq_fenceSteps li+li{margin-top:8px}.fThDlq_fenceForm{width:100%;margin-top:20px}.fThDlq_fenceInputRow{gap:8px;width:100%;display:flex}.fThDlq_fenceInput{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);min-width:0;color:var(--dsw-alias-label-primary);font:inherit;border-radius:10px;flex:1;padding:10px 14px;font-size:13px;transition:border-color .12s,box-shadow .12s}.fThDlq_fenceInput:focus{border-color:var(--dsw-alias-brand-primary);outline:none;box-shadow:0 0 0 2px #0066ff26}.fThDlq_fencePairButton{border:1px solid var(--dsw-alias-button-primary-fill);background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground);font:inherit;cursor:pointer;border-radius:10px;flex-shrink:0;padding:10px 18px;font-size:13px;font-weight:500;transition:filter .12s,opacity .12s}.fThDlq_fencePairButton:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill));border-color:var(--dsw-alias-button-primary-hover,var(--dsw-alias-button-primary-fill))}.fThDlq_fencePairButton:disabled{opacity:.55;cursor:not-allowed}.fThDlq_fencePairButton:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}.fThDlq_fenceError{color:var(--dsw-alias-state-error-primary);text-align:left;margin:10px 0 0;font-size:13px;line-height:1.4}.fThDlq_fenceRetry{border:1px solid var(--dsw-alias-border-l2);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;background:0 0;border-radius:10px;margin-top:12px;padding:10px 16px;font-weight:500;transition:background-color .12s,color .12s}.fThDlq_fenceRetry:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_fenceRetry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:3px}.fThDlq_fenceFootnote{color:var(--dsw-alias-label-tertiary);margin:14px 0 0;font-size:12px;line-height:1.55}.fThDlq_addresses{border:none;margin:12px 0 0;padding:0}.fThDlq_addresses legend{color:var(--dsw-alias-label-secondary);padding:0;font-size:13px}.fThDlq_address{color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums;cursor:pointer;border-radius:6px;align-items:center;gap:8px;margin-top:6px;padding:4px 6px;font-size:13px;transition:background-color .12s;display:flex}.fThDlq_address:hover{background:var(--dsw-alias-interactive-bg-hover)}.fThDlq_address input:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);border-radius:50%;outline:none}.fThDlq_addressValue{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-secondary);flex:1;font-size:12px;overflow:hidden}.fThDlq_addressHint{color:var(--dsw-alias-label-tertiary);margin:6px 0 0;font-size:12px}.fThDlq_devices{border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);border-radius:16px;flex-direction:column;gap:8px;padding:12px 16px 14px;display:flex}.fThDlq_devicesTitle{margin:0;font-size:13px;font-weight:500;line-height:20px}.fThDlq_devicesEmpty{color:var(--dsw-alias-label-secondary);margin:0;font-size:13px}.fThDlq_deviceList{flex-direction:column;gap:8px;margin:0;padding:0;list-style:none;display:flex}.fThDlq_deviceRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.fThDlq_deviceMeta{flex-direction:column;gap:2px;min-width:0;display:flex}.fThDlq_deviceName{text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;overflow:hidden}.fThDlq_devicePresence{font-size:12px;line-height:18px}.fThDlq_deviceOnline{color:var(--dsw-alias-state-success-primary)}.fThDlq_deviceOffline{color:var(--dsw-alias-label-secondary)}.fThDlq_deviceSeen{color:var(--dsw-alias-label-tertiary);font-variant-numeric:tabular-nums;font-size:12px}.fThDlq_deviceRevoke{color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:none;border-radius:8px;flex:none;padding:6px 10px;font-size:12px;transition:background-color .12s,color .12s}.fThDlq_deviceRevoke:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.fThDlq_deviceRevoke:focus-visible{box-shadow:0 0 0 2px var(--dsw-alias-bg-layer-2), 0 0 0 4px var(--dsw-alias-brand-primary);outline:none}@media (prefers-reduced-motion:reduce){.fThDlq_trigger,.fThDlq_close,.fThDlq_action,.fThDlq_address,.fThDlq_deviceRevoke{transition:none}}.fThDlq_entryRow{flex:none;align-items:center;gap:6px;min-width:0;display:flex}.fThDlq_entryRow[data-rail=rail]{flex-direction:column-reverse;gap:4px}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]{flex-flow:wrap;align-items:center}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]>:not([class*=settingsArea]):not([class*=footerActions]){flex:100%;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footArea]>[class*=footerActions]{display:contents}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>:not([data-dsh-part=entry]):not([class*=entryRow]){flex:100%;order:1;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>[data-dsh-part=entry],[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=footerActions]>[data-slot=\"sidebar.footer.action\"]>[class*=entryRow]{flex:none;order:4;min-width:0}[data-dsh-frame]:not([data-sidebar-collapsed]) [class*=settingsArea]{flex:auto;order:3;width:auto;min-width:0}[data-dsh-frame][data-sidebar-collapsed] [class*=footerActions]:has([data-rail=rail]){flex-direction:column;align-items:center;gap:4px}";
 		const tagId$9 = "@linxin666/dsh-web-all/packages/dsh-remote-web-ui/src/client/remote.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$9) + "]") === null) {
 			const tag = document.createElement("style");
@@ -23541,9 +22895,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"stoppedHint": "fThDlq_stoppedHint",
 			"subtitle": "fThDlq_subtitle",
 			"title": "fThDlq_title",
-			"trigger": "fThDlq_trigger",
-			"tunnelFailed": "fThDlq_tunnelFailed",
-			"tunnelNote": "fThDlq_tunnelNote"
+			"trigger": "fThDlq_trigger"
 		};
 		//#endregion
 		//#region ../dsh-remote-web-ui/src/client/RemotePanel.tsx
@@ -23755,21 +23107,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 						className: remote_module_css_default.stoppedHint,
 						children: t("stopped.hint")
 					}),
-					state.tunnel !== void 0 && state.tunnel.state !== "running" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: state.tunnel.state === "failed" ? remote_module_css_default.tunnelFailed : remote_module_css_default.tunnelNote,
-						role: "status",
-						children: state.tunnel.state === "failed" ? t("tunnel.failed", { error: state.tunnel.error ?? t("tunnel.unknownError") }) : t("tunnel.starting")
-					}),
-					state.relay?.state === "registering" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: remote_module_css_default.tunnelNote,
-						role: "status",
-						children: t("relay.registering")
-					}),
-					state.relay?.state === "failed" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: remote_module_css_default.tunnelFailed,
-						role: "status",
-						children: t("relay.failed", { error: state.relay.error ?? t("tunnel.unknownError") })
-					}),
 					(state.publicBaseUrl !== void 0 || state.lanAddresses.length > 1) && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("fieldset", {
 						className: remote_module_css_default.addresses,
 						children: [
@@ -23909,14 +23246,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		*/
 		/**
 		* Apply one status frame onto the current state: the ready state mirrors
-		* the full phase/device picture, while the lan-required banner only keeps
-		* the auto-tunnel frame (the signal for the running re-issue).
+		* the full phase/device picture; the banner states stay until re-minted.
 		*/
 		function mergeFrame(state, frame) {
-			if (state.kind === "lan-required") return {
-				...state,
-				...frame.tunnel !== void 0 ? { tunnel: frame.tunnel } : {}
-			};
 			if (state.kind !== "ready") return state;
 			return {
 				...state,
@@ -23924,8 +23256,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 				deviceCount: frame.deviceCount,
 				onlineCount: frame.onlineCount,
 				devices: frame.devices ?? [],
-				...frame.tunnel !== void 0 ? { tunnel: frame.tunnel } : {},
-				...frame.relay !== void 0 ? { relay: frame.relay } : {},
 				...frame.posture !== void 0 ? { posture: frame.posture } : {}
 			};
 		}
@@ -23937,10 +23267,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		function RemoteEntry({ wide, t }) {
 			const [open, setOpen] = (0, react.useState)(false);
 			const [state, setState] = (0, react.useState)({ kind: "lan-required" });
-			const stateRef = (0, react.useRef)(state);
-			(0, react.useEffect)(() => {
-				stateRef.current = state;
-			}, [state]);
 			const [copied, setCopied] = (0, react.useState)(false);
 			const [copiedToken, setCopiedToken] = (0, react.useState)(false);
 			const eventSource = (0, react.useRef)(void 0);
@@ -23984,18 +23310,13 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 				const next = await mint();
 				if (seq !== openSeq.current) return;
 				setState(next);
-				if (next.kind !== "ready" && next.kind !== "lan-required") return;
+				if (next.kind !== "ready") return;
 				const source = new EventSource("api/pair/events");
 				eventSource.current = source;
 				source.onmessage = (event) => {
 					try {
 						const frame = JSON.parse(event.data);
 						if (frame.type !== "state") return;
-						const previous = stateRef.current;
-						if (previous.kind === "lan-required" && frame.tunnel?.state === "running" && previous.tunnel?.state !== "running") {
-							mint().then(setState);
-							return;
-						}
 						setState((current) => mergeFrame(current, frame));
 					} catch {}
 				};
@@ -24051,7 +23372,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			const handlePickAddress = (0, react.useCallback)((address) => {
 				mint(address).then(setState);
 			}, [mint]);
-			/** Re-mint against the configured public (tunneled) base. */
+			/** Re-mint against the configured public (proxy) base. */
 			const handlePickPublic = (0, react.useCallback)(() => {
 				mint().then(setState);
 			}, [mint]);
@@ -24671,18 +23992,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 				}
 			};
 		}
-		/**
-		* A free-text field the Host treats as a secret and redacts from the read-back
-		* (role('secret') in the section schema). The card still edits it like text,
-		* but a save never compares the redacted value back: the staged set is judged
-		* by the mutation settling (see {@link FieldSpec.secret}).
-		*/
-		function secretField(field) {
-			return {
-				...textField(field),
-				secret: true
-			};
-		}
 		/** A boolean field, edited through true/false draft text. */
 		function booleanField$1(field) {
 			return {
@@ -24998,9 +24307,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 					textField("cookieName"),
 					booleanField$1("requirePairingForLan"),
 					textField("publicBaseUrl"),
-					booleanField$1("autoTunnel"),
-					secretField("tunnelToken"),
-					booleanField$1("relay"),
 					booleanField$1("lanBind")
 				]);
 				this.store = this.form.bind(() => this.projection());
@@ -25016,9 +24322,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 					cookieName: this.form.field("cookieName"),
 					requirePairingForLan: this.form.field("requirePairingForLan"),
 					publicBaseUrl: this.form.field("publicBaseUrl"),
-					autoTunnel: this.form.field("autoTunnel"),
-					tunnelToken: this.form.field("tunnelToken"),
-					relay: this.form.field("relay"),
 					lanBind: this.form.field("lanBind")
 				};
 			}
@@ -25170,7 +24473,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 						id: "settings-remote-public-base",
 						label: t("settings.publicBaseUrl"),
 						hint: t("settings.publicBaseUrlHint"),
-						placeholder: "https://example.trycloudflare.com",
+						placeholder: "https://dsh.example.com",
 						...fieldProps,
 						...state.publicBaseUrl,
 						onEdit: (text) => {
@@ -25178,52 +24481,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 						},
 						onReset: () => {
 							props.resetField("publicBaseUrl");
-						}
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(BooleanField$1, {
-						id: "settings-remote-auto-tunnel",
-						label: t("settings.autoTunnel"),
-						hint: t("settings.autoTunnelHint"),
-						inheritLabel: t("settings.inherit"),
-						onLabel: t("settings.on"),
-						offLabel: t("settings.off"),
-						...fieldProps,
-						...state.autoTunnel,
-						onEdit: (text) => {
-							props.edit("autoTunnel", text);
-						},
-						onReset: () => {
-							props.resetField("autoTunnel");
-						}
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ValueField$1, {
-						id: "settings-remote-tunnel-token",
-						label: t("settings.tunnelToken"),
-						hint: t("settings.tunnelTokenHint"),
-						placeholder: "eyJ...",
-						...fieldProps,
-						...state.tunnelToken,
-						onEdit: (text) => {
-							props.edit("tunnelToken", text);
-						},
-						onReset: () => {
-							props.resetField("tunnelToken");
-						}
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(BooleanField$1, {
-						id: "settings-remote-relay",
-						label: t("settings.relay"),
-						hint: t("settings.relayHint"),
-						inheritLabel: t("settings.inherit"),
-						onLabel: t("settings.on"),
-						offLabel: t("settings.off"),
-						...fieldProps,
-						...state.relay,
-						onEdit: (text) => {
-							props.edit("relay", text);
-						},
-						onReset: () => {
-							props.resetField("relay");
 						}
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(LanBindStatus, { t }),
@@ -25345,7 +24602,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"fence.unpaired.tokenFailed": "配对失败，请检查网络或重新获取链接",
 			"fence.unpaired.footnote": "请勿使用他人提供的配对链接；管理员可随时取消此设备的授权。",
 			"posture.exposed": "/api 通道对未配对设备敞开",
-			"posture.exposedHint": "以下来源的请求未经配对即可访问完整桌面 API：{hosts}。请移除对应来源的 --trusted-host（配对机制已覆盖远程访问），或改为仅绑定 127.0.0.1 并使用隧道。",
+			"posture.exposedHint": "以下来源的请求未经配对即可访问完整桌面 API：{hosts}。请移除对应来源的 --trusted-host（配对机制已覆盖远程访问），或改为仅绑定 127.0.0.1。",
 			"action.stop": "停止",
 			"action.refresh": "刷新二维码",
 			"action.copy": "复制链接",
@@ -25362,14 +24619,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"devices.revoke": "取消配对",
 			"devices.revoke.label": "取消配对此设备",
 			"stopped.hint": "已停止远程访问。点击\"刷新二维码\"重新开启。",
-			"tunnel.starting": "公网隧道启动中，二维码将自动变为公网链接…",
-			"tunnel.failed": "公网隧道启动失败：{error}",
-			"tunnel.unknownError": "未知错误",
-			"relay.registering": "正在把临时隧道同步到固定域名（<id>.dsh-market.com）…",
-			"relay.failed": "固定域名同步失败：{error}。正在自动重试，期间二维码可能使用临时地址。",
 			"close.label": "关闭远程访问面板",
 			"settings.title": "远程访问",
-			"settings.description": "手机配对、公网隧道与设备限额。",
+			"settings.description": "手机配对与设备限额。",
 			"settings.enabled": "启用远程访问",
 			"settings.enabledHint": "关闭后移除侧边栏入口并停用配对路由与局域网栅栏。",
 			"settings.tokenTtlMs": "配对令牌有效期（毫秒）",
@@ -25385,13 +24637,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"settings.requirePairingForLan": "局域网访问要求配对",
 			"settings.requirePairingForLanHint": "开启：非本机回环的桌面 Web GUI 改走门控的 /remote，必须携带有效配对 Cookie；关闭：桌面继续走普通路径（仅在该来源已被 SDK 信任时有意义），配对只管理令牌与状态。",
 			"settings.publicBaseUrl": "公网地址（可选）",
-			"settings.publicBaseUrlHint": "内网穿透的公网地址，如 Cloudflare Tunnel：https://xxx.trycloudflare.com；固定域名隧道（下方令牌）也填这里。填写后二维码将生成公网链接，手机不在同一网络也能配对；留空则仅局域网可用。",
-			"settings.autoTunnel": "自动公网隧道",
-			"settings.autoTunnelHint": "开启后插件自动启动 Cloudflare quick tunnel（无需安装任何工具），并自动更新公网地址与信任配置，手机随时可用公网配对；注意临时域名每次重启都会变化，手机需重新扫码。开启时忽略下方固定隧道令牌与上方手动公网地址。",
-			"settings.tunnelToken": "固定域名隧道令牌（Cloudflare Tunnel）",
-			"settings.tunnelTokenHint": "填入 Cloudflare 命名隧道的 Token（即 cloudflared tunnel run --token 的值），插件会自动运行该隧道：公共主机名固定不变，手机配对一次后重启也无需重新配对。需先在 Cloudflare 控制台把公共主机名映射到 http://127.0.0.1:<端口>，并在上方\"公网地址\"填写同一域名。优先级低于\"自动公网隧道\"。",
-			"settings.relay": "固定域名中继（推荐开启）",
-			"settings.relayHint": "开启后自动隧道会额外注册一个固定不变的公网子域名（<id>.dsh-market.com，由 dsh-market 边缘中继到你的临时隧道），手机配对一次后重启无需重新扫码，二维码与书签地址永远不变。流量经由 dsh-market 边缘转发（与临时隧道相同的信任面）；关闭则回退为纯临时地址，每次重启需重新配对。仅对\"自动公网隧道\"生效。",
+			"settings.publicBaseUrlHint": "部署在本服务之前的固定公网地址（例如反向代理公布的 https 域名）：https://dsh.example.com。填写后二维码将生成该地址的链接，手机在该来源即可配对；留空则仅局域网可用。",
 			"settings.lanBind": "局域网访问（绑定 0.0.0.0）",
 			"settings.lanBindHint": "开启后插件把绑定默认改写为 0.0.0.0 并写入 profile 补丁（显式 --host 仍优先），同时维护主机防火墙放行（Windows/Linux；macOS 无需管理）；关闭回退 127.0.0.1。绑定变化通常在重启 dsh web 后生效。",
 			"lan.cardTitle": "局域网访问",
@@ -25465,7 +24711,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"fence.unpaired.tokenFailed": "Pairing failed, please check network or issue a new link",
 			"fence.unpaired.footnote": "Do not use pairing links from people you do not trust. An administrator can revoke this device at any time.",
 			"posture.exposed": "The /api channel is open to unpaired devices",
-			"posture.exposedHint": "Requests from {hosts} reach the full desktop API without pairing. Remove --trusted-host for them (pairing already covers remote access), or bind loopback only and use the tunnel.",
+			"posture.exposedHint": "Requests from {hosts} reach the full desktop API without pairing. Remove --trusted-host for them (pairing already covers remote access), or bind loopback only.",
 			"action.stop": "Stop",
 			"action.refresh": "Refresh QR",
 			"action.copy": "Copy link",
@@ -25482,14 +24728,9 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"devices.revoke": "Unpair",
 			"devices.revoke.label": "Unpair this device",
 			"stopped.hint": "Remote access is stopped. Click \"Refresh QR\" to re-enable it.",
-			"tunnel.starting": "The public tunnel is starting; the QR code will switch to a public link shortly…",
-			"tunnel.failed": "The public tunnel failed to start: {error}",
-			"tunnel.unknownError": "unknown error",
-			"relay.registering": "Syncing the ephemeral tunnel to the stable hostname (<id>.dsh-market.com)…",
-			"relay.failed": "Stable-hostname sync failed: {error}. Retrying automatically; the QR may use the ephemeral address meanwhile.",
 			"close.label": "Close remote access panel",
 			"settings.title": "Remote access",
-			"settings.description": "Phone pairing, public tunnel and device limits.",
+			"settings.description": "Phone pairing and device limits.",
 			"settings.enabled": "Enable remote access",
 			"settings.enabledHint": "When off, the sidebar entry is removed and pairing routes plus the LAN fence stop.",
 			"settings.tokenTtlMs": "Pairing token lifetime (ms)",
@@ -25505,13 +24746,7 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			"settings.requirePairingForLan": "Require pairing for LAN access",
 			"settings.requirePairingForLanHint": "On: a desktop Web GUI at a non-loopback origin rides the gated /remote channel and must carry a live paired-device cookie. Off: the desktop stays on its original paths (only useful when that origin is already trusted) and pairing only manages tokens/status.",
 			"settings.publicBaseUrl": "Public address (optional)",
-			"settings.publicBaseUrlHint": "The public URL of a tunnel in front of this server, e.g. a Cloudflare Tunnel: https://xxx.trycloudflare.com; a fixed-hostname tunnel (token below) also goes here. When set, the QR link is built from it so a phone anywhere can pair; leave blank for LAN-only usage.",
-			"settings.autoTunnel": "Auto public tunnel",
-			"settings.autoTunnelHint": "When on, the plugin runs its own Cloudflare quick tunnel (no tool installation needed) and keeps the public address and trust config in sync automatically, so a phone anywhere can pair at any time; note the ephemeral hostname changes on every restart, so phones must scan again. The named-tunnel token below and the manual public address above are ignored while this is on.",
-			"settings.tunnelToken": "Fixed-hostname tunnel token (Cloudflare Tunnel)",
-			"settings.tunnelTokenHint": "Paste a Cloudflare named-tunnel token (the value of cloudflared tunnel run --token) and the plugin runs the tunnel itself: the public hostname stays fixed, so a phone pairs once and never again across restarts. First map the public hostname to http://127.0.0.1:<port> in the Cloudflare dashboard and enter the same hostname as the public address above. Lower precedence than the auto quick tunnel.",
-			"settings.relay": "Stable-hostname relay (recommended)",
-			"settings.relayHint": "When on, the auto tunnel additionally registers a never-changing public subdomain (<id>.dsh-market.com, relayed by the dsh-market edge to your ephemeral tunnel), so a phone pairs once and the QR and bookmark stay valid across restarts. Traffic transits the dsh-market edge (the same trust point as the ephemeral tunnel); turn off to fall back to the raw ephemeral address, which needs re-pairing after every restart. Applies to the auto public tunnel only.",
+			"settings.publicBaseUrlHint": "A fixed public URL in front of this server, e.g. an https origin published by a reverse proxy: https://dsh.example.com. When set, the QR link is built from it so a phone on that origin can pair; leave blank for LAN-only usage.",
 			"settings.lanBind": "LAN access (bind 0.0.0.0)",
 			"settings.lanBindHint": "When on, the plugin writes a managed block into the profile patch defaulting the bind to 0.0.0.0 (an explicit --host flag still wins), and maintains the matching host firewall rule (Windows/Linux; other platforms need none). When off, the block pins 127.0.0.1. The bind change usually takes effect after dsh web restarts.",
 			"lan.cardTitle": "LAN access",
@@ -26150,76 +25385,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 					]
 				})
 			});
-		}
-		//#endregion
-		//#region ../dsh-remote-web-ui/src/client/telemetry.ts
-		const VISITOR_KEY$3 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$3 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$3 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$3() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$3() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$3);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$3, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$3(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$3) && key !== DAY_KEY_PREFIX$3 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$3(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$3 + today) !== null) return;
-				const visitor = visitorId$3();
-				if (visitor === null) return;
-				pruneDayKeys$3(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$3();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$3, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$3 + today, "1");
-				}).catch(() => {});
-			} catch {}
 		}
 		//#endregion
 		//#region ../dsh-remote-web-ui/src/client/mobile-adapt.ts
@@ -27488,7 +26653,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			ctx.effect(() => () => {
 				window.__dshRemoteAdapt?.setEnabled?.(false);
 			}, "remote-web-ui: mobile-adapt");
-			reportDailyHeartbeat$3([{ name: "@linxin666/dsh-remote-web-ui" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$7, {
@@ -28362,76 +27526,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			return win.location?.protocol ?? "";
 		}
 		//#endregion
-		//#region ../dsh-update/src/client/telemetry.ts
-		const VISITOR_KEY$2 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$2 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$2 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$2() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$2() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$2);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$2, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$2(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$2) && key !== DAY_KEY_PREFIX$2 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$2(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$2 + today) !== null) return;
-				const visitor = visitorId$2();
-				if (visitor === null) return;
-				pruneDayKeys$2(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$2();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$2, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$2 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-update/src/client/index.ts
 		var client_exports$6 = /* @__PURE__ */ __exportAll({
 			apply: () => apply$7,
@@ -28448,7 +27542,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		* @param ctx - client root context.
 		*/
 		function apply$7(ctx) {
-			reportDailyHeartbeat$2([{ name: "@linxin666/dsh-update" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$6, {
@@ -44868,76 +43961,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			return new SharedFormsReader(ctx.configForms, field);
 		}
 		//#endregion
-		//#region ../dsh-ssh/src/client/telemetry.ts
-		const VISITOR_KEY$1 = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX$1 = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT$1 = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion$1() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId$1() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY$1);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY$1, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys$1(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX$1) && key !== DAY_KEY_PREFIX$1 + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat$1(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX$1 + today) !== null) return;
-				const visitor = visitorId$1();
-				if (visitor === null) return;
-				pruneDayKeys$1(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion$1();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT$1, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX$1 + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-ssh/src/client/index.ts
 		var client_exports$5 = /* @__PURE__ */ __exportAll({
 			apply: () => apply$6,
@@ -44964,7 +43987,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		* @param ctx - client root context (locale service).
 		*/
 		function apply$6(ctx) {
-			reportDailyHeartbeat$1([{ name: "@linxin666/dsh-ssh" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$5, {
@@ -48406,76 +47428,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 			};
 		}
 		//#endregion
-		//#region ../dsh-skill-explorer/src/client/telemetry.ts
-		const VISITOR_KEY = "dsh-web-ui-telemetry-visitor";
-		const DAY_KEY_PREFIX = "dsh-web-ui-telemetry-day:";
-		const ENDPOINT = "https://dsh-market.com/api/telemetry/event";
-		/** The building package's version, when the bundle carries it. */
-		function bakedVersion() {
-			try {
-				return "0.4.5";
-			} catch {
-				return;
-			}
-		}
-		/** Read or lazily create the anonymous visitor id; null when storage is unavailable. */
-		function visitorId() {
-			try {
-				const existing = localStorage.getItem(VISITOR_KEY);
-				if (existing && /^[A-Za-z0-9_-]{16,64}$/.test(existing)) return existing;
-				const fresh = crypto.randomUUID().replaceAll("-", "");
-				localStorage.setItem(VISITOR_KEY, fresh);
-				return fresh;
-			} catch {
-				return null;
-			}
-		}
-		/** Drop stale per-day dedup keys so localStorage does not grow forever. */
-		function pruneDayKeys(today) {
-			try {
-				for (let index = localStorage.length - 1; index >= 0; index -= 1) {
-					const key = localStorage.key(index);
-					if (key !== null && key.startsWith(DAY_KEY_PREFIX) && key !== DAY_KEY_PREFIX + today) localStorage.removeItem(key);
-				}
-			} catch {}
-		}
-		/**
-		* Fire the daily heartbeat for the given items at most once per UTC day per
-		* browser. Never throws and never blocks the caller. Items without an explicit
-		* version inherit the bundle's baked build version.
-		*/
-		function reportDailyHeartbeat(items) {
-			try {
-				if (items.length === 0) return;
-				const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
-				if (navigator.webdriver) return;
-				if (localStorage.getItem(DAY_KEY_PREFIX + today) !== null) return;
-				const visitor = visitorId();
-				if (visitor === null) return;
-				pruneDayKeys(today);
-				const payloadItems = items.map((item) => {
-					const out = { name: item.name };
-					const version = item.version ?? bakedVersion();
-					if (version !== void 0) out.version = version;
-					if (item.channel !== void 0) out.channel = item.channel;
-					return out;
-				});
-				const body = JSON.stringify({
-					kind: "heartbeat",
-					visitor,
-					items: payloadItems
-				});
-				fetch(ENDPOINT, {
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body,
-					keepalive: true
-				}).then((response) => {
-					if (response.ok) localStorage.setItem(DAY_KEY_PREFIX + today, "1");
-				}).catch(() => {});
-			} catch {}
-		}
-		//#endregion
 		//#region ../dsh-skill-explorer/src/client/index.ts
 		var client_exports$3 = /* @__PURE__ */ __exportAll({
 			apply: () => apply$4,
@@ -48494,7 +47446,6 @@ Please report this to https://github.com/markedjs/marked.`, e) {
 		* @param ctx - client root context (locale service).
 		*/
 		function apply$4(ctx) {
-			reportDailyHeartbeat([{ name: "@linxin666/dsh-client-ui-skill-explorer" }]);
 			ctx.effect(() => {
 				try {
 					return ctx.locale.register(NS$3, {
